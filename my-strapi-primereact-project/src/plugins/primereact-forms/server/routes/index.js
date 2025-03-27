@@ -1,0 +1,43 @@
+
+module.exports = [
+  {
+    method: 'GET',
+    path: '/forms',
+    handler: 'form.find',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/forms/:id',
+    handler: 'form.findOne',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'POST',
+    path: '/forms',
+    handler: 'form.create',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'PUT',
+    path: '/forms/:id',
+    handler: 'form.update',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/forms/:id',
+    handler: 'form.delete',
+    config: {
+      policies: [],
+    },
+  },
+];

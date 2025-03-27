@@ -1,3 +1,4 @@
+
 {
   "name": "my-strapi-primereact-project",
   "version": "0.1.0",
@@ -43,5 +44,4 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   }
-
 }

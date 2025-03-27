@@ -36,5 +36,12 @@
   },
   "strapi": {
     "uuid": "eddacc96-ac36-459c-9994-5bee03473274"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build:dev": "vite build --mode development",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   }
+
 }

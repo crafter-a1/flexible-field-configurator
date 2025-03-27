@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
-import { Instagram, Twitter, Linkedin, GitHub, ArrowRight } from 'lucide-react';
+import { Instagram, Twitter, Linkedin, Github, ArrowRight } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const ref = useScrollAnimation<HTMLDivElement>({ threshold: 0.1 });
@@ -19,7 +18,7 @@ const Footer: React.FC = () => {
               Creating elegant digital experiences inspired by timeless design principles.
             </p>
             <div className="flex space-x-4">
-              {[Twitter, Instagram, Linkedin, GitHub].map((Icon, index) => (
+              {[Twitter, Instagram, Linkedin, Github].map((Icon, index) => (
                 <a
                   key={index}
                   href="#"

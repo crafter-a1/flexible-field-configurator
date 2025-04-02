@@ -16,6 +16,14 @@ export interface Collection {
   settings?: any;
 }
 
+export interface CollectionFormData {
+  name: string;
+  apiId: string;
+  description?: string;
+  status?: 'published' | 'draft';
+  settings?: any;
+}
+
 export async function fetchCollections(): Promise<Collection[]> {
   try {
     // First, get the collections
@@ -28,11 +36,11 @@ export async function fetchCollections(): Promise<Collection[]> {
       throw collectionsError;
     }
 
-    // Then get field counts for each collection
+    // Then get field counts for each collection using group by
     const { data: fieldsData, error: fieldsError } = await supabase
       .from('fields')
-      .select('collection_id, count')
-      .select('collection_id, count(*)', { count: 'exact' });
+      .select('collection_id, count', { count: 'exact', head: false })
+      .group('collection_id');
 
     if (fieldsError) {
       throw fieldsError;
@@ -47,8 +55,8 @@ export async function fetchCollections(): Promise<Collection[]> {
     // Get content item counts for each collection
     const { data: contentData, error: contentError } = await supabase
       .from('content_items')
-      .select('collection_id, count')
-      .select('collection_id, count(*)', { count: 'exact' });
+      .select('collection_id, count', { count: 'exact', head: false })
+      .group('collection_id');
 
     if (contentError) {
       throw contentError;
@@ -132,6 +140,93 @@ export async function createCollection(params: CreateCollectionParams): Promise<
       description: error.message,
       variant: 'destructive'
     });
+    throw error;
+  }
+}
+
+// Add the missing functions
+export interface ContentItem {
+  id: string;
+  collection_id: string;
+  data: any;
+  status: 'published' | 'draft';
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getContentItems(collectionId: string): Promise<ContentItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('content_items')
+      .select('*')
+      .eq('collection_id', collectionId);
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching content items:', error);
+    throw error;
+  }
+}
+
+export interface Field {
+  id: string;
+  name: string;
+  api_id: string;
+  type: string;
+  collection_id: string;
+  config: any;
+  required: boolean;
+  order: number;
+}
+
+export async function getFieldsForCollection(collectionId: string): Promise<Field[]> {
+  try {
+    const { data, error } = await supabase
+      .from('fields')
+      .select('*')
+      .eq('collection_id', collectionId)
+      .order('order', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching fields:', error);
+    throw error;
+  }
+}
+
+export async function createField(collectionId: string, fieldData: any): Promise<Field> {
+  try {
+    const { data, error } = await supabase
+      .from('fields')
+      .insert([
+        {
+          collection_id: collectionId,
+          name: fieldData.name,
+          api_id: fieldData.api_id || fieldData.name.toLowerCase().replace(/\s+/g, '_'),
+          type: fieldData.type,
+          config: fieldData.config || {},
+          required: fieldData.required || false,
+          order: fieldData.order || 0
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating field:', error);
     throw error;
   }
 }

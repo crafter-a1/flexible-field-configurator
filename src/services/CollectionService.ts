@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Collection {
   id: string;
@@ -43,7 +44,7 @@ export async function fetchCollections(): Promise<Collection[]> {
     for (const collection of collectionsData) {
       const { count, error } = await supabase
         .from('fields')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('collection_id', collection.id);
       
       if (error) {
@@ -58,7 +59,7 @@ export async function fetchCollections(): Promise<Collection[]> {
     for (const collection of collectionsData) {
       const { count, error } = await supabase
         .from('content_items')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('collection_id', collection.id);
       
       if (error) {
@@ -210,7 +211,7 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
       .from('fields')
       .select('*')
       .eq('collection_id', collectionId)
-      .order('position', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (error) {
       throw error;
@@ -222,19 +223,19 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
       api_id: field.api_id,
       type: field.type,
       collection_id: field.collection_id,
-      description: field.description,
-      label: field.label || field.name,
-      placeholder: field.placeholder || '',
-      default_value: field.default_value,
-      validation: field.validation,
-      options: field.options,
-      is_hidden: field.is_hidden,
-      position: field.sort_order,
+      description: field.description || '',
+      label: field.name, // Using name as fallback for label
+      placeholder: '',
+      default_value: field.settings?.default_value,
+      validation: field.settings?.validation,
+      options: field.settings?.options,
+      is_hidden: field.settings?.is_hidden || false,
+      position: field.sort_order || 0,
       required: field.required || false,
-      ui_options: field.ui_options,
+      ui_options: field.settings?.ui_options,
       // For backward compatibility
       config: field.settings || {},
-      order: field.sort_order
+      order: field.sort_order || 0
     }));
   } catch (error) {
     console.error('Error fetching fields:', error);
@@ -244,6 +245,15 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
 
 export async function createField(collectionId: string, fieldData: any): Promise<Field> {
   try {
+    // We'll store most of the custom field props in the settings JSON column
+    const fieldSettings = {
+      default_value: fieldData.default_value,
+      validation: fieldData.validation,
+      options: fieldData.options,
+      is_hidden: fieldData.is_hidden || false,
+      ui_options: fieldData.ui_options
+    };
+
     const { data, error } = await supabase
       .from('fields')
       .insert([
@@ -252,17 +262,10 @@ export async function createField(collectionId: string, fieldData: any): Promise
           name: fieldData.name,
           api_id: fieldData.api_id || fieldData.name.toLowerCase().replace(/\s+/g, '_'),
           type: fieldData.type,
-          label: fieldData.label || fieldData.name,
           description: fieldData.description || '',
-          placeholder: fieldData.placeholder || '',
-          default_value: fieldData.default_value,
-          validation: fieldData.validation,
-          options: fieldData.options,
-          is_hidden: fieldData.is_hidden || false,
-          sort_order: fieldData.position || 0,
           required: fieldData.required || false,
-          ui_options: fieldData.ui_options,
-          settings: fieldData.config || {}
+          sort_order: fieldData.position || 0,
+          settings: fieldSettings
         }
       ])
       .select()
@@ -278,19 +281,18 @@ export async function createField(collectionId: string, fieldData: any): Promise
       api_id: data.api_id,
       type: data.type,
       collection_id: data.collection_id,
-      description: data.description,
-      label: data.label || data.name,
-      placeholder: data.placeholder || '',
-      default_value: data.default_value,
-      validation: data.validation,
-      options: data.options,
-      is_hidden: data.is_hidden,
-      position: data.sort_order,
+      description: data.description || '',
+      label: data.name, // Using name as label
+      placeholder: '',
+      default_value: fieldSettings.default_value,
+      validation: fieldSettings.validation,
+      options: fieldSettings.options,
+      is_hidden: fieldSettings.is_hidden || false,
+      position: data.sort_order || 0,
       required: data.required || false,
-      ui_options: data.ui_options,
-      // For backward compatibility
+      ui_options: fieldSettings.ui_options,
       config: data.settings || {},
-      order: data.sort_order
+      order: data.sort_order || 0
     };
   } catch (error) {
     console.error('Error creating field:', error);

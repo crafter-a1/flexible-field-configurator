@@ -4,16 +4,13 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { CollectionGrid } from '@/components/collections/CollectionGrid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, SlidersHorizontal, Plus, Grid, List } from 'lucide-react';
+import { Search, Filter, SlidersHorizontal, Plus, Grid, List, X } from 'lucide-react';
 import { 
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CollectionForm } from '@/components/collections/CollectionForm';
+import { NewCollectionForm } from '@/components/collections/NewCollectionForm';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -80,19 +77,13 @@ export default function Collections() {
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-cms-blue hover:bg-blue-700 mt-4 md:mt-0">
+              <Button className="bg-blue-600 hover:bg-blue-700 mt-4 md:mt-0">
                 <Plus className="mr-2 h-4 w-4" />
                 New Collection
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-              <DialogHeader className="px-6 pt-6">
-                <DialogTitle>Create New Collection</DialogTitle>
-                <DialogDescription>
-                  Define your content structure and customize collection settings.
-                </DialogDescription>
-              </DialogHeader>
-              <CollectionForm 
+            <DialogContent className="sm:max-w-[800px] p-6 overflow-y-auto max-h-[90vh]">
+              <NewCollectionForm 
                 onCollectionCreated={handleCollectionCreated} 
                 onClose={() => setIsDialogOpen(false)}
               />
@@ -141,7 +132,7 @@ export default function Collections() {
                 variant={viewMode === 'grid' ? 'default' : 'ghost'} 
                 size="icon"
                 onClick={() => setViewMode('grid')}
-                className={viewMode === 'grid' ? 'bg-cms-blue text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
+                className={viewMode === 'grid' ? 'bg-blue-600 text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
               >
                 <Grid className="h-4 w-4" />
               </Button>
@@ -149,7 +140,7 @@ export default function Collections() {
                 variant={viewMode === 'list' ? 'default' : 'ghost'} 
                 size="icon"
                 onClick={() => setViewMode('list')}
-                className={viewMode === 'list' ? 'bg-cms-blue text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
+                className={viewMode === 'list' ? 'bg-blue-600 text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -181,7 +172,7 @@ export default function Collections() {
             <p className="text-gray-500 mb-4">No collections found. Create your first collection to get started.</p>
             <Button 
               onClick={() => setIsDialogOpen(true)}
-              className="bg-cms-blue hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create Collection

@@ -9,243 +9,133 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      api_keys: {
+      collections: {
         Row: {
+          api_id: string
           created_at: string
           description: string | null
-          expires_at: string | null
+          icon: string | null
+          icon_color: string | null
           id: string
-          key_hash: string
-          key_prefix: string
-          last_used_at: string | null
-          name: string
-          permissions: Json
-          user_id: string
+          status: string
+          title: string
+          updated_at: string
         }
         Insert: {
+          api_id: string
           created_at?: string
           description?: string | null
-          expires_at?: string | null
+          icon?: string | null
+          icon_color?: string | null
           id?: string
-          key_hash: string
-          key_prefix: string
-          last_used_at?: string | null
-          name: string
-          permissions?: Json
-          user_id: string
+          status?: string
+          title: string
+          updated_at?: string
         }
         Update: {
+          api_id?: string
           created_at?: string
           description?: string | null
-          expires_at?: string | null
+          icon?: string | null
+          icon_color?: string | null
           id?: string
-          key_hash?: string
-          key_prefix?: string
-          last_used_at?: string | null
-          name?: string
-          permissions?: Json
-          user_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "api_keys_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       content_items: {
         Row: {
-          content_type_id: string
+          collection_id: string | null
           created_at: string
           data: Json
           id: string
           status: string
           updated_at: string
-          user_id: string
         }
         Insert: {
-          content_type_id: string
+          collection_id?: string | null
           created_at?: string
           data?: Json
           id?: string
           status?: string
           updated_at?: string
-          user_id: string
         }
         Update: {
-          content_type_id?: string
+          collection_id?: string | null
           created_at?: string
           data?: Json
           id?: string
           status?: string
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "content_items_content_type_id_fkey"
-            columns: ["content_type_id"]
+            foreignKeyName: "content_items_collection_id_fkey"
+            columns: ["collection_id"]
             isOneToOne: false
-            referencedRelation: "content_types"
+            referencedRelation: "collections"
             referencedColumns: ["id"]
           },
         ]
-      }
-      content_types: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_published: boolean
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_published?: boolean
-          name: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_published?: boolean
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      field_types: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          properties: Json
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          properties?: Json
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          properties?: Json
-          type?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       fields: {
         Row: {
-          content_type_id: string
+          api_id: string
+          collection_id: string | null
           created_at: string
-          default_value: Json | null
           description: string | null
           id: string
-          is_hidden: boolean | null
-          label: string
           name: string
-          options: Json | null
-          placeholder: string | null
-          position: number
+          required: boolean | null
+          settings: Json | null
+          sort_order: number | null
           type: string
           updated_at: string
-          validation: Json | null
         }
         Insert: {
-          content_type_id: string
+          api_id: string
+          collection_id?: string | null
           created_at?: string
-          default_value?: Json | null
           description?: string | null
           id?: string
-          is_hidden?: boolean | null
-          label: string
           name: string
-          options?: Json | null
-          placeholder?: string | null
-          position?: number
+          required?: boolean | null
+          settings?: Json | null
+          sort_order?: number | null
           type: string
           updated_at?: string
-          validation?: Json | null
         }
         Update: {
-          content_type_id?: string
+          api_id?: string
+          collection_id?: string | null
           created_at?: string
-          default_value?: Json | null
           description?: string | null
           id?: string
-          is_hidden?: boolean | null
-          label?: string
           name?: string
-          options?: Json | null
-          placeholder?: string | null
-          position?: number
+          required?: boolean | null
+          settings?: Json | null
+          sort_order?: number | null
           type?: string
           updated_at?: string
-          validation?: Json | null
         }
         Relationships: [
           {
-            foreignKeyName: "fields_content_type_id_fkey"
-            columns: ["content_type_id"]
+            foreignKeyName: "fields_collection_id_fkey"
+            columns: ["collection_id"]
             isOneToOne: false
-            referencedRelation: "content_types"
+            referencedRelation: "collections"
             referencedColumns: ["id"]
           },
         ]
-      }
-      users: {
-        Row: {
-          created_at: string
-          full_name: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          full_name?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      generate_api_key: {
-        Args: {
-          key_name: string
-          key_description?: string
-        }
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

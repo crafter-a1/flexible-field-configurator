@@ -1,94 +1,79 @@
-import React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { SidebarItem } from "@/components/layout/SidebarItem";
-import {
-  LayoutDashboard,
-  FileText,
-  Database,
-  Puzzle,
-  FormInput,
-  KeyRound,
-  Users2,
-  Settings2,
-  Languages,
-  ShieldCheck,
-  Folder,
-} from "lucide-react";
+
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Box, Component, FileText, FileCode, Users, Menu, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+
+const navItems = [
+  { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { name: 'Collections', path: '/collections', icon: Box },
+  { name: 'Components', path: '/components', icon: Component },
+  { name: 'Content', path: '/content', icon: FileText },
+  { name: 'API', path: '/api', icon: FileCode },
+  { name: 'Users', path: '/users', icon: Users },
+];
 
 export function Sidebar() {
-  return (
-    <aside className="fixed left-0 top-0 z-30 h-screen w-60 border-r bg-sidebar pb-10 pt-16 lg:border-r-0">
-      <ScrollArea className="h-full px-3 py-2">
-        <div className="space-y-4">
-          <div className="py-2">
-            <div className="space-y-1">
-              <SidebarItem
-                icon={<LayoutDashboard size={16} />}
-                label="Dashboard"
-                href="/dashboard"
-              />
-              <SidebarItem
-                icon={<FileText size={16} />}
-                label="Content"
-                href="/content"
-              />
-              <SidebarItem
-                icon={<Database size={16} />}
-                label="Content Types"
-                href="/content-types"
-              />
-              <SidebarItem
-                icon={<Puzzle size={16} />}
-                label="Fields Library"
-                href="/fields-library"
-              />
-              <SidebarItem
-                icon={<FormInput size={16} />}
-                label="Form Builder"
-                href="/form-builder"
-              />
-              <SidebarItem
-                icon={<KeyRound size={16} />}
-                label="API Keys"
-                href="/api-keys"
-              />
-              <SidebarItem
-                icon={<Users2 size={16} />}
-                label="Users"
-                href="/users"
-              />
-              <SidebarItem
-                icon={<Folder size={16} />}
-                label="Fields Demo"
-                href="/fields-demo"
-              />
-            </div>
-          </div>
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
-          <div className="py-2">
-            <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">
-              Settings
-            </h3>
-            <div className="space-y-1">
-              <SidebarItem
-                icon={<Settings2 size={16} />}
-                label="General"
-                href="/settings"
-              />
-              <SidebarItem
-                icon={<Languages size={16} />}
-                label="Localization"
-                href="/settings/localization"
-              />
-              <SidebarItem
-                icon={<ShieldCheck size={16} />}
-                label="Security"
-                href="/settings/security"
-              />
-            </div>
-          </div>
+  return (
+    <>
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className="bg-white"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+      
+      <div className={cn(
+        "fixed inset-y-0 left-0 z-40 w-64 bg-cms-darkBlue text-white transition-transform duration-300 ease-in-out", 
+        collapsed ? "-translate-x-full" : "translate-x-0",
+        "md:translate-x-0"
+      )}>
+        <div className="flex justify-between items-center p-4 h-16">
+          <h1 className="text-lg font-bold">CMS System</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setCollapsed(true)} 
+            className="md:hidden text-white hover:bg-slate-700"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-      </ScrollArea>
-    </aside>
+        
+        <nav className="mt-6">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              const Icon = item.icon;
+              
+              return (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "flex items-center px-4 py-3 mx-2 rounded-md transition-colors",
+                      isActive 
+                        ? "bg-slate-700 text-white" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    )}
+                  >
+                    <Icon className="h-5 w-5 mr-3" />
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+    </>
   );
 }

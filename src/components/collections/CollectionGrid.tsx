@@ -1,6 +1,7 @@
 
 import { CollectionCard } from './CollectionCard';
 import { CollectionListItem } from './CollectionListItem';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Collection {
   id: string;
@@ -21,6 +22,8 @@ interface CollectionGridProps {
 }
 
 export function CollectionGrid({ collections, viewMode, sortOption, onCreateNew }: CollectionGridProps) {
+  const isMobile = useIsMobile();
+  
   // Sort collections based on the selected option
   const sortedCollections = [...collections].sort((a, b) => {
     if (sortOption === 'alphabetical') {
@@ -36,7 +39,7 @@ export function CollectionGrid({ collections, viewMode, sortOption, onCreateNew 
 
   if (viewMode === 'list') {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-100 overflow-hidden overflow-x-auto">
         <div className="grid grid-cols-12 bg-gray-50 p-4 border-b border-gray-100 text-sm font-medium text-gray-500">
           <div className="col-span-5">Name</div>
           <div className="col-span-2 text-center">Fields</div>
@@ -64,7 +67,7 @@ export function CollectionGrid({ collections, viewMode, sortOption, onCreateNew 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {sortedCollections.map((collection) => (
         <CollectionCard
           key={collection.id}
@@ -80,13 +83,13 @@ export function CollectionGrid({ collections, viewMode, sortOption, onCreateNew 
       ))}
       
       <div 
-        className="bg-gray-50 rounded-lg border border-dashed border-gray-300 flex flex-col items-center justify-center p-6 min-h-[200px] hover:bg-gray-100 transition-colors cursor-pointer"
+        className="bg-gray-50 rounded-lg border border-dashed border-gray-300 flex flex-col items-center justify-center p-6 min-h-[180px] hover:bg-gray-100 transition-colors cursor-pointer"
         onClick={onCreateNew}
       >
-        <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <span className="text-2xl text-gray-400">+</span>
+        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+          <span className="text-xl text-gray-400">+</span>
         </div>
-        <p className="text-gray-600">Create Collection</p>
+        <p className="text-gray-600 text-sm">Create Collection</p>
       </div>
     </div>
   );

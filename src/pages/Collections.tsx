@@ -24,6 +24,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { fetchCollections, createCollection, Collection } from '@/services/CollectionService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Collections() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +32,7 @@ export default function Collections() {
   const [sortOption, setSortOption] = useState('latest');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   
   // Fetch collections using React Query
   const { data: collections = [], isLoading, error } = useQuery({
@@ -69,11 +71,11 @@ export default function Collections() {
 
   return (
     <MainLayout>
-      <div className="p-6 md:p-10">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+      <div className="p-4 md:p-6 max-w-full overflow-x-hidden">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Collections</h1>
-            <p className="text-gray-500">Manage your content structure and data models</p>
+            <h1 className="text-2xl font-bold mb-1">Collections</h1>
+            <p className="text-gray-500 text-sm">Manage your content structure and data models</p>
           </div>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -84,6 +86,12 @@ export default function Collections() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6">
+                <DialogTitle>Create New Collection</DialogTitle>
+                <DialogDescription>
+                  Define your content structure and customize collection settings.
+                </DialogDescription>
+              </DialogHeader>
               <CollectionForm 
                 onCollectionCreated={handleCollectionCreated} 
                 onClose={() => setIsDialogOpen(false)}
@@ -92,7 +100,7 @@ export default function Collections() {
           </Dialog>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -103,17 +111,20 @@ export default function Collections() {
             />
           </div>
           
-          <div className="flex gap-3">
-            <Button variant="outline" className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="flex items-center gap-2 h-10 text-sm">
               <Filter className="h-4 w-4" />
-              <span>Filter</span>
+              <span className={isMobile ? "sr-only" : ""}>Filter</span>
             </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2 h-10 text-sm">
                   <SlidersHorizontal className="h-4 w-4" />
-                  <span>Sort: {sortOption === 'latest' ? 'Latest' : sortOption === 'oldest' ? 'Oldest' : 'Alphabetical'}</span>
+                  <span className={isMobile ? "sr-only" : ""}>
+                    {!isMobile && "Sort: "}
+                    {sortOption === 'latest' ? 'Latest' : sortOption === 'oldest' ? 'Oldest' : 'A-Z'}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -130,7 +141,7 @@ export default function Collections() {
                 variant={viewMode === 'grid' ? 'default' : 'ghost'} 
                 size="icon"
                 onClick={() => setViewMode('grid')}
-                className={viewMode === 'grid' ? 'bg-cms-blue text-white' : 'text-gray-500'}
+                className={viewMode === 'grid' ? 'bg-cms-blue text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
               >
                 <Grid className="h-4 w-4" />
               </Button>
@@ -138,7 +149,7 @@ export default function Collections() {
                 variant={viewMode === 'list' ? 'default' : 'ghost'} 
                 size="icon"
                 onClick={() => setViewMode('list')}
-                className={viewMode === 'list' ? 'bg-cms-blue text-white' : 'text-gray-500'}
+                className={viewMode === 'list' ? 'bg-cms-blue text-white h-10 w-10' : 'text-gray-500 h-10 w-10'}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -155,16 +166,18 @@ export default function Collections() {
             <p className="text-red-500">Error loading collections. Please try again.</p>
           </div>
         ) : (
-          <CollectionGrid 
-            collections={filteredCollections} 
-            viewMode={viewMode}
-            sortOption={sortOption}
-            onCreateNew={() => setIsDialogOpen(true)}
-          />
+          <div className="pb-6">
+            <CollectionGrid 
+              collections={filteredCollections} 
+              viewMode={viewMode}
+              sortOption={sortOption}
+              onCreateNew={() => setIsDialogOpen(true)}
+            />
+          </div>
         )}
         
         {!isLoading && filteredCollections.length === 0 && searchQuery === '' && (
-          <div className="text-center mt-12">
+          <div className="text-center my-8">
             <p className="text-gray-500 mb-4">No collections found. Create your first collection to get started.</p>
             <Button 
               onClick={() => setIsDialogOpen(true)}
@@ -177,7 +190,7 @@ export default function Collections() {
         )}
         
         {!isLoading && filteredCollections.length === 0 && searchQuery !== '' && (
-          <div className="text-center mt-12">
+          <div className="text-center my-8">
             <p className="text-gray-500">No collections matching "{searchQuery}"</p>
             <Button 
               variant="ghost" 

@@ -52,7 +52,9 @@ export default function Collections() {
     createCollectionMutation.mutate({
       name: formData.name,
       apiId: formData.apiId,
-      description: formData.description
+      description: formData.description,
+      status: formData.status || 'published',
+      settings: formData.settings
     });
     
     toast({
@@ -81,14 +83,11 @@ export default function Collections() {
                 New Collection
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Collection</DialogTitle>
-                <DialogDescription>
-                  Define the structure for a new type of content in your CMS.
-                </DialogDescription>
-              </DialogHeader>
-              <CollectionForm onCollectionCreated={handleCollectionCreated} />
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+              <CollectionForm 
+                onCollectionCreated={handleCollectionCreated} 
+                onClose={() => setIsDialogOpen(false)}
+              />
             </DialogContent>
           </Dialog>
         </div>

@@ -13,12 +13,24 @@ export interface Collection {
   items: number;
   lastUpdated: string;
   status: 'published' | 'draft';
+  settings?: CollectionSettings;
+}
+
+export interface CollectionSettings {
+  defaultView?: 'grid' | 'list';
+  defaultSorting?: 'createdDate' | 'updatedDate' | 'name';
+  itemsPerPage?: string;
+  enableApiAccess?: boolean;
+  requireAuthentication?: boolean;
+  enableVersioning?: boolean;
 }
 
 export interface CollectionFormData {
   name: string;
   apiId: string;
   description?: string;
+  status?: 'published' | 'draft';
+  settings?: CollectionSettings;
 }
 
 // Fetch all collections
@@ -80,7 +92,8 @@ export const fetchCollections = async (): Promise<Collection[]> => {
         fields: fieldCount ? parseInt(fieldCount.count) : 0,
         items: itemCount ? parseInt(itemCount.count) : 0,
         lastUpdated,
-        status: collection.status as 'published' | 'draft'
+        status: collection.status as 'published' | 'draft',
+        settings: collection.settings
       };
     });
   } catch (error) {
@@ -97,7 +110,7 @@ export const fetchCollections = async (): Promise<Collection[]> => {
 // Create a new collection
 export const createCollection = async (collectionData: CollectionFormData): Promise<Collection | null> => {
   try {
-    const { name, apiId, description } = collectionData;
+    const { name, apiId, description, status = 'published', settings } = collectionData;
     
     // Insert new collection
     const { data: newCollection, error } = await supabase
@@ -108,7 +121,8 @@ export const createCollection = async (collectionData: CollectionFormData): Prom
         description: description || null,
         icon: name.charAt(0).toUpperCase(),
         icon_color: getRandomColor(),
-        status: 'draft'
+        status: status,
+        settings: settings || {}
       })
       .select()
       .single();
@@ -125,7 +139,8 @@ export const createCollection = async (collectionData: CollectionFormData): Prom
       fields: 0,
       items: 0,
       lastUpdated: 'Just now',
-      status: newCollection.status as 'published' | 'draft'
+      status: newCollection.status as 'published' | 'draft',
+      settings: newCollection.settings
     };
   } catch (error) {
     console.error('Error creating collection:', error);

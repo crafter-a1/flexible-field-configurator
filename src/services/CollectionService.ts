@@ -14,7 +14,7 @@ export interface Collection {
   fields: number;
   items?: number;
   lastUpdated: string;
-  settings?: any;
+  settings?: Json;
   permissions?: string[];
 }
 
@@ -23,7 +23,7 @@ export interface CollectionFormData {
   apiId: string;
   description?: string;
   status?: 'published' | 'draft';
-  settings?: any;
+  settings?: Json;
   permissions?: string[];
 }
 
@@ -44,7 +44,7 @@ export async function fetchCollections(): Promise<Collection[]> {
     for (const collection of collectionsData) {
       const { count, error } = await supabase
         .from('fields')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: false })
         .eq('collection_id', collection.id);
       
       if (error) {
@@ -59,7 +59,7 @@ export async function fetchCollections(): Promise<Collection[]> {
     for (const collection of collectionsData) {
       const { count, error } = await supabase
         .from('content_items')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: false })
         .eq('collection_id', collection.id);
       
       if (error) {
@@ -95,7 +95,7 @@ export interface CreateCollectionParams {
   apiId: string;
   description?: string;
   status?: 'published' | 'draft';
-  settings?: any;
+  settings?: Json;
   permissions?: string[];
 }
 
@@ -103,20 +103,40 @@ export async function createCollection(params: CreateCollectionParams): Promise<
   try {
     const { name, apiId, description = '', status = 'published', settings = {}, permissions = [] } = params;
     
+    // First, let's find out if the collections table has the settings and permissions columns
+    const { data: columnsData, error: columnsError } = await supabase
+      .from('collections')
+      .select('*')
+      .limit(1);
+      
+    if (columnsError) {
+      console.error('Error checking collection columns:', columnsError);
+    }
+    
+    // Create the insert object based on available columns
+    const insertObj: any = { 
+      title: name, 
+      api_id: apiId, 
+      description, 
+      status,
+      icon: 'C',
+      icon_color: 'blue'
+    };
+    
+    // Only add these properties if they exist in the database schema
+    if (columnsData && columnsData.length > 0) {
+      const sampleRow = columnsData[0];
+      if ('settings' in sampleRow) {
+        insertObj.settings = settings;
+      }
+      if ('permissions' in sampleRow) {
+        insertObj.permissions = permissions;
+      }
+    }
+    
     const { data, error } = await supabase
       .from('collections')
-      .insert([
-        { 
-          title: name, 
-          api_id: apiId, 
-          description, 
-          status,
-          icon: 'C',
-          icon_color: 'blue',
-          settings,
-          permissions
-        }
-      ])
+      .insert([insertObj])
       .select()
       .single();
     
@@ -226,13 +246,13 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
       description: field.description || '',
       label: field.name, // Using name as fallback for label
       placeholder: '',
-      default_value: field.settings?.default_value,
-      validation: field.settings?.validation,
-      options: field.settings?.options,
+      default_value: field.settings?.default_value || null,
+      validation: field.settings?.validation || null,
+      options: field.settings?.options || null,
       is_hidden: field.settings?.is_hidden || false,
       position: field.sort_order || 0,
       required: field.required || false,
-      ui_options: field.settings?.ui_options,
+      ui_options: field.settings?.ui_options || null,
       // For backward compatibility
       config: field.settings || {},
       order: field.sort_order || 0
@@ -246,12 +266,12 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
 export async function createField(collectionId: string, fieldData: any): Promise<Field> {
   try {
     // We'll store most of the custom field props in the settings JSON column
-    const fieldSettings = {
-      default_value: fieldData.default_value,
-      validation: fieldData.validation,
-      options: fieldData.options,
+    const fieldSettings: Record<string, any> = {
+      default_value: fieldData.default_value || null,
+      validation: fieldData.validation || null,
+      options: fieldData.options || null,
       is_hidden: fieldData.is_hidden || false,
-      ui_options: fieldData.ui_options
+      ui_options: fieldData.ui_options || null
     };
 
     const { data, error } = await supabase
@@ -287,7 +307,7 @@ export async function createField(collectionId: string, fieldData: any): Promise
       default_value: fieldSettings.default_value,
       validation: fieldSettings.validation,
       options: fieldSettings.options,
-      is_hidden: fieldSettings.is_hidden || false,
+      is_hidden: fieldSettings.is_hidden,
       position: data.sort_order || 0,
       required: data.required || false,
       ui_options: fieldSettings.ui_options,

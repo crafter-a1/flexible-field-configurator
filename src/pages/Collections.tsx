@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CollectionGrid } from '@/components/collections/CollectionGrid';
@@ -9,6 +8,8 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { NewCollectionForm } from '@/components/collections/NewCollectionForm';
 import { 
@@ -31,22 +32,26 @@ export default function Collections() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   
-  // Fetch collections using React Query
   const { data: collections = [], isLoading, error } = useQuery({
     queryKey: ['collections'],
     queryFn: fetchCollections
   });
   
-  // Create collection mutation
   const createCollectionMutation = useMutation({
     mutationFn: createCollection,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] });
       setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to create collection",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   });
   
-  // Handler for when a new collection is created
   const handleCollectionCreated = async (formData: any) => {
     createCollectionMutation.mutate({
       name: formData.name,
@@ -83,6 +88,10 @@ export default function Collections() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[800px] p-6 overflow-y-auto max-h-[90vh]">
+              <DialogTitle className="text-2xl font-bold">Create Collection</DialogTitle>
+              <DialogDescription className="text-gray-500 text-sm">
+                Define a new content structure for your CMS
+              </DialogDescription>
               <NewCollectionForm 
                 onCollectionCreated={handleCollectionCreated} 
                 onClose={() => setIsDialogOpen(false)}

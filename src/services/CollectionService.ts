@@ -81,8 +81,9 @@ export async function fetchCollections(): Promise<Collection[]> {
       fields: fieldCounts[collection.id] || 0,
       items: contentCounts[collection.id] || 0,
       lastUpdated: new Date(collection.updated_at).toLocaleDateString(),
-      settings: collection.settings || {},
-      permissions: collection.permissions || []
+      // Handle settings and permissions that might not exist in the database
+      settings: (collection as any).settings || {},
+      permissions: (collection as any).permissions || []
     }));
   } catch (error) {
     console.error('Error fetching collections:', error);
@@ -126,10 +127,10 @@ export async function createCollection(params: CreateCollectionParams): Promise<
     // Only add these properties if they exist in the database schema
     if (columnsData && columnsData.length > 0) {
       const sampleRow = columnsData[0];
-      if ('settings' in sampleRow) {
+      if ('settings' in sampleRow || (sampleRow as any).settings !== undefined) {
         insertObj.settings = settings;
       }
-      if ('permissions' in sampleRow) {
+      if ('permissions' in sampleRow || (sampleRow as any).permissions !== undefined) {
         insertObj.permissions = permissions;
       }
     }
@@ -155,8 +156,9 @@ export async function createCollection(params: CreateCollectionParams): Promise<
       fields: 0,
       items: 0,
       lastUpdated: new Date(data.updated_at).toLocaleDateString(),
-      settings: data.settings || {},
-      permissions: data.permissions || []
+      // Handle settings and permissions that might not exist in the database
+      settings: (data as any).settings || {},
+      permissions: (data as any).permissions || []
     };
   } catch (error) {
     console.error('Error creating collection:', error);
@@ -225,6 +227,16 @@ export interface Field {
   order?: number; // For backward compatibility
 }
 
+// Field settings interface to properly type the settings
+export interface FieldSettings {
+  default_value?: any;
+  validation?: any;
+  options?: any;
+  is_hidden?: boolean;
+  ui_options?: any;
+  [key: string]: any;
+}
+
 export async function getFieldsForCollection(collectionId: string): Promise<Field[]> {
   try {
     const { data, error } = await supabase
@@ -237,26 +249,31 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
       throw error;
     }
 
-    return (data || []).map(field => ({
-      id: field.id,
-      name: field.name,
-      api_id: field.api_id,
-      type: field.type,
-      collection_id: field.collection_id,
-      description: field.description || '',
-      label: field.name, // Using name as fallback for label
-      placeholder: '',
-      default_value: field.settings?.default_value || null,
-      validation: field.settings?.validation || null,
-      options: field.settings?.options || null,
-      is_hidden: field.settings?.is_hidden || false,
-      position: field.sort_order || 0,
-      required: field.required || false,
-      ui_options: field.settings?.ui_options || null,
-      // For backward compatibility
-      config: field.settings || {},
-      order: field.sort_order || 0
-    }));
+    return (data || []).map(field => {
+      // Safely access nested properties
+      const settings = field.settings as FieldSettings || {};
+      
+      return {
+        id: field.id,
+        name: field.name,
+        api_id: field.api_id,
+        type: field.type,
+        collection_id: field.collection_id,
+        description: field.description || '',
+        label: field.name, // Using name as fallback for label
+        placeholder: '',
+        default_value: settings.default_value || null,
+        validation: settings.validation || null,
+        options: settings.options || null,
+        is_hidden: settings.is_hidden || false,
+        position: field.sort_order || 0,
+        required: field.required || false,
+        ui_options: settings.ui_options || null,
+        // For backward compatibility
+        config: field.settings || {},
+        order: field.sort_order || 0
+      };
+    });
   } catch (error) {
     console.error('Error fetching fields:', error);
     throw error;
@@ -266,7 +283,7 @@ export async function getFieldsForCollection(collectionId: string): Promise<Fiel
 export async function createField(collectionId: string, fieldData: any): Promise<Field> {
   try {
     // We'll store most of the custom field props in the settings JSON column
-    const fieldSettings: Record<string, any> = {
+    const fieldSettings: FieldSettings = {
       default_value: fieldData.default_value || null,
       validation: fieldData.validation || null,
       options: fieldData.options || null,

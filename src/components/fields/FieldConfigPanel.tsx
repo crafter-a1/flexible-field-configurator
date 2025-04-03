@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { FieldAppearancePanel } from "./FieldAppearancePanel";
 
 // Base schema for all field types
 const baseFieldSchema = z.object({
@@ -25,6 +26,14 @@ const baseFieldSchema = z.object({
   }),
   description: z.string().optional(),
   required: z.boolean().default(false),
+  ui_options: z.object({
+    placeholder: z.string().optional(),
+    help_text: z.string().optional(),
+    display_mode: z.string().optional(),
+    showCharCount: z.boolean().optional(),
+    width: z.number().optional(),
+    hidden_in_forms: z.boolean().optional(),
+  }).optional().default({}),
 });
 
 // Text field specific schema
@@ -72,6 +81,14 @@ export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: Fie
         placeholder: "",
         defaultValue: "",
       },
+      ui_options: {
+        placeholder: "",
+        help_text: "",
+        display_mode: "default",
+        showCharCount: false,
+        width: 100,
+        hidden_in_forms: false,
+      }
     },
   });
 
@@ -253,7 +270,7 @@ export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: Fie
           </TabsContent>
           
           <TabsContent value="appearance" className="space-y-4">
-            <p className="text-gray-500">Appearance settings will be added soon</p>
+            <FieldAppearancePanel form={form} fieldType={fieldType} />
           </TabsContent>
           
           <TabsContent value="advanced" className="space-y-4">
@@ -265,7 +282,7 @@ export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: Fie
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-cms-blue hover:bg-blue-700">
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
             Save Field
           </Button>
         </div>

@@ -15,18 +15,86 @@ import { toast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getFieldsForCollection, createField } from '@/services/CollectionService';
 
-const fieldTypes = [
-  { id: 'text', name: 'Text', description: 'Single line text field' },
-  { id: 'textarea', name: 'Text Area', description: 'Multi-line text field' },
-  { id: 'number', name: 'Number', description: 'Numeric field with validation' },
-  { id: 'date', name: 'Date', description: 'Date picker field' },
-  { id: 'boolean', name: 'Boolean', description: 'True/False toggle field' },
-  { id: 'select', name: 'Select', description: 'Dropdown selection field' },
-  { id: 'relation', name: 'Relation', description: 'Relationship to another collection' },
-  { id: 'media', name: 'Media', description: 'Image, video, or document upload' },
-  { id: 'json', name: 'JSON', description: 'Structured JSON data field' },
-  { id: 'color', name: 'Color', description: 'Color picker field' },
-];
+// Define the field types categorized by group
+const fieldTypes = {
+  'Text & Numbers': [
+    { id: 'text', name: 'Input', description: 'Single line text field' },
+    { id: 'textarea', name: 'Textarea', description: 'Multi-line text field' },
+    { id: 'number', name: 'Number', description: 'Numeric field with validation' },
+    { id: 'password', name: 'Password', description: 'Secure password input with toggle' },
+    { id: 'mask', name: 'Input Mask', description: 'Input with formatting mask' },
+    { id: 'otp', name: 'Input OTP', description: 'One-time password input' },
+    { id: 'autocomplete', name: 'Autocomplete Input', description: 'Input with suggestions' },
+    { id: 'blockeditor', name: 'Block Editor', description: 'Rich text block editor' },
+    { id: 'code', name: 'Code', description: 'Code snippet with syntax highlighting' },
+    { id: 'wysiwyg', name: 'WYSIWYG', description: 'What you see is what you get editor' },
+    { id: 'markdown', name: 'Markdown', description: 'Markdown text editor' },
+    { id: 'tags', name: 'Tags', description: 'Input for multiple tags or keywords' },
+    { id: 'list', name: 'List', description: 'Ordered or unordered list' },
+    { id: 'slug', name: 'Slug', description: 'URL-friendly version of a name' },
+    { id: 'seo', name: 'SEO Interface', description: 'Search engine optimization fields' },
+  ],
+  'Selection': [
+    { id: 'select', name: 'Dropdown', description: 'Single selection dropdown' },
+    { id: 'multiselect', name: 'Dropdown (Multiple)', description: 'Multiple selection dropdown' },
+    { id: 'toggle', name: 'Toggle', description: 'On/Off toggle switch' },
+    { id: 'boolean', name: 'Boolean', description: 'True/False toggle field' },
+    { id: 'checkbox', name: 'Checkboxes', description: 'Multiple checkbox options' },
+    { id: 'tristatecheck', name: 'Tri-State Checkbox', description: 'Checkbox with three states' },
+    { id: 'multistatecheck', name: 'Multi-State Checkbox', description: 'Checkbox with multiple states' },
+    { id: 'radio', name: 'Radio Buttons', description: 'Single selection radio options' },
+    { id: 'selectbutton', name: 'Select Button', description: 'Button-style option selector' },
+    { id: 'treeselect', name: 'Checkboxes (Tree)', description: 'Hierarchical checkbox selection' },
+    { id: 'listbox', name: 'List Box', description: 'Scrollable selection list' },
+    { id: 'mention', name: 'Mention Box', description: 'Text input with @mentions' },
+    { id: 'date', name: 'Datetime', description: 'Date and time picker' },
+    { id: 'color', name: 'Color', description: 'Color picker field' },
+    { id: 'colorpicker', name: 'Color Picker', description: 'Advanced color selection tool' },
+    { id: 'icon', name: 'Icon', description: 'Icon selection from a library' },
+    { id: 'radioCards', name: 'Radio Cards', description: 'Visual card-based radio selection' },
+    { id: 'checkboxCards', name: 'Checkbox Cards', description: 'Visual card-based checkbox selection' },
+  ],
+  'Relational': [
+    { id: 'relation', name: 'Relation', description: 'Relationship to another collection' },
+    { id: 'file', name: 'File', description: 'Single file upload field' },
+    { id: 'image', name: 'Image', description: 'Image upload and preview' },
+    { id: 'files', name: 'Files', description: 'Multiple file uploads' },
+    { id: 'media', name: 'Media', description: 'Image, video, or document upload' },
+    { id: 'manyToMany', name: 'Many to Many', description: 'Many-to-many relationship' },
+    { id: 'oneToMany', name: 'One to Many', description: 'One-to-many relationship' },
+    { id: 'manyToOne', name: 'Many to One', description: 'Many-to-one relationship' },
+    { id: 'treeView', name: 'Tree View', description: 'Hierarchical tree relationship view' },
+    { id: 'translations', name: 'Translations', description: 'Multi-language content fields' },
+    { id: 'builder', name: 'Builder (M2A)', description: 'Advanced modular content builder' },
+    { id: 'collectionItem', name: 'Collection Item Dropdown', description: 'Select items from another collection' },
+  ],
+  'Advanced': [
+    { id: 'json', name: 'JSON', description: 'Structured JSON data field' },
+    { id: 'map', name: 'Map', description: 'Geographic map selection' },
+    { id: 'repeater', name: 'Repeater', description: 'Repeatable group of fields' },
+    { id: 'inlineRepeater', name: 'Inline Repeater', description: 'Inline repeatable fields' },
+    { id: 'rating', name: 'Rating', description: 'Star-based rating selector' },
+    { id: 'slider', name: 'Slider', description: 'Range slider input' },
+    { id: 'hash', name: 'Hash', description: 'Secure hash field with encryption' },
+  ],
+  'Presentation': [
+    { id: 'divider', name: 'Divider', description: 'Visual separator between fields' },
+    { id: 'buttonLinks', name: 'Button Links', description: 'Clickable button links' },
+    { id: 'notice', name: 'Notice', description: 'Information or warning message' },
+    { id: 'builderButton', name: 'Builder (M2A) Button Group', description: 'Button group for builder interface' },
+    { id: 'superHeader', name: 'Super Header', description: 'Prominent section header' },
+  ],
+  'Groups': [
+    { id: 'accordion', name: 'Accordion', description: 'Collapsible content sections' },
+    { id: 'detailGroup', name: 'Detail Group', description: 'Grouped details with labels' },
+    { id: 'rawGroup', name: 'Raw Group', description: 'Custom group without styling' },
+    { id: 'modal', name: 'Modal', description: 'Popup dialog content group' },
+    { id: 'tabGroup', name: 'Tab Group', description: 'Content organized in tabs' },
+  ],
+};
+
+// Flatten the categories for mutation handling
+const flatFieldTypes = Object.values(fieldTypes).flat();
 
 export default function FieldConfiguration() {
   const { collectionId } = useParams<{ collectionId: string }>();
@@ -36,6 +104,7 @@ export default function FieldConfiguration() {
   const [selectedFieldType, setSelectedFieldType] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('fields');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   
   // Redirect if no collectionId
   useEffect(() => {
@@ -43,6 +112,13 @@ export default function FieldConfiguration() {
       navigate('/collections');
     }
   }, [collectionId, navigate]);
+
+  // Auto-select the first category if none is selected
+  useEffect(() => {
+    if (!activeCategory && Object.keys(fieldTypes).length > 0) {
+      setActiveCategory(Object.keys(fieldTypes)[0]);
+    }
+  }, [activeCategory]);
   
   // Fetch fields for the selected collection
   const { data: fields = [], isLoading, error } = useQuery({
@@ -148,10 +224,26 @@ export default function FieldConfiguration() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <FieldTypeSelector 
-                      fieldTypes={fieldTypes} 
-                      onSelectFieldType={selectFieldType} 
-                    />
+                    <div className="mb-6">
+                      <Tabs value={activeCategory || Object.keys(fieldTypes)[0]} onValueChange={setActiveCategory}>
+                        <TabsList className="mb-4 flex flex-wrap h-auto">
+                          {Object.keys(fieldTypes).map((category) => (
+                            <TabsTrigger key={category} value={category} className="h-9">
+                              {category}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        
+                        {Object.entries(fieldTypes).map(([category, types]) => (
+                          <TabsContent key={category} value={category}>
+                            <FieldTypeSelector 
+                              fieldTypes={types} 
+                              onSelectFieldType={selectFieldType} 
+                            />
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    </div>
                   </CardContent>
                 </>
               ) : (
@@ -163,7 +255,7 @@ export default function FieldConfiguration() {
                     <CardDescription>
                       {selectedFieldId 
                         ? 'Modify the field properties' 
-                        : `Configure your new ${fieldTypes.find(t => t.id === selectedFieldType)?.name} field`
+                        : `Configure your new ${flatFieldTypes.find(t => t.id === selectedFieldType)?.name} field`
                       }
                     </CardDescription>
                   </CardHeader>

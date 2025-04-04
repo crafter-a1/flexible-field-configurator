@@ -9,22 +9,34 @@ interface FieldType {
   id: string;
   name: string;
   description: string;
+  group?: string;
 }
 
 interface FieldTypeSelectorProps {
   fieldTypes: FieldType[];
   onSelectFieldType: (typeId: string) => void;
+  activeCategory?: string;
 }
 
-export function FieldTypeSelector({ fieldTypes, onSelectFieldType }: FieldTypeSelectorProps) {
+export function FieldTypeSelector({ 
+  fieldTypes, 
+  onSelectFieldType,
+  activeCategory 
+}: FieldTypeSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Filter by category first if activeCategory is provided
+  const categoryFilteredTypes = activeCategory 
+    ? fieldTypes.filter(type => !type.group || type.group === activeCategory)
+    : fieldTypes;
+  
+  // Then filter by search query
   const filteredFieldTypes = searchQuery ? 
-    fieldTypes.filter(type => 
+    categoryFilteredTypes.filter(type => 
       type.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       type.description.toLowerCase().includes(searchQuery.toLowerCase())
     ) : 
-    fieldTypes;
+    categoryFilteredTypes;
 
   return (
     <div className="space-y-4">

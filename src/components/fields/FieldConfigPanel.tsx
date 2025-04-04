@@ -1,462 +1,621 @@
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { FieldValidationPanel } from './FieldValidationPanel';
+import { FieldAdvancedTab } from './FieldAdvancedTab'; 
+import { FieldAppearancePanel } from './appearance/FieldAppearancePanel';
+import { InputTextField } from './inputs/InputTextField';
+import { NumberInputField } from './inputs/NumberInputField';
+import { PasswordInputField } from './inputs/PasswordInputField';
+import { MaskInputField } from './inputs/MaskInputField';
+import { OTPInputField } from './inputs/OTPInputField';
+import { AutocompleteInputField } from './inputs/AutocompleteInputField';
+import { BlockEditorField } from './inputs/BlockEditorField';
+import { WysiwygEditorField } from './inputs/WysiwygEditorField';
+import { MarkdownEditorField } from './inputs/MarkdownEditorField';
+import { TagsInputField } from './inputs/TagsInputField';
+import { SlugInputField } from './inputs/SlugInputField';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { FieldAppearancePanel } from "./FieldAppearancePanel";
+interface AppearanceSettings {
+  floatLabel?: boolean;
+  filled?: boolean;
+  width?: number;
+  display_mode?: string;
+  showCharCount?: boolean;
+  customClass?: string;
+  customCss?: string;
+}
 
-// Base schema for all field types
-const baseFieldSchema = z.object({
-  name: z.string().min(2, {
-    message: "Field name must be at least 2 characters.",
-  }),
-  description: z.string().optional(),
-  required: z.boolean().default(false),
-  ui_options: z.object({
-    placeholder: z.string().optional(),
-    help_text: z.string().optional(),
-    display_mode: z.string().optional(),
-    showCharCount: z.boolean().optional(),
-    width: z.number().optional(),
-    hidden_in_forms: z.boolean().optional(),
-  }).optional().default({}),
-});
+interface AdvancedSettings {
+  showButtons?: boolean;
+  buttonLayout?: 'horizontal' | 'vertical';
+  prefix?: string;
+  suffix?: string;
+  currency?: string;
+  locale?: string;
+  mask?: string;
+  customData?: Record<string, any>;
+}
 
-// Text field specific schema
-const textFieldSchema = baseFieldSchema.extend({
-  settings: z.object({
-    minLength: z.number().int().min(0).optional(),
-    maxLength: z.number().int().min(0).optional(),
-    placeholder: z.string().optional(),
-    defaultValue: z.string().optional(),
-  }),
-});
+const getFieldSchema = (fieldType: string | null) => {
+  const baseSchema = {
+    name: z.string().min(2, { message: "Field name must be at least 2 characters" }),
+    description: z.string().optional(),
+    helpText: z.string().optional(),
+    required: z.boolean().default(false),
+    ui_options: z.object({
+      placeholder: z.string().optional(),
+      help_text: z.string().optional(),
+      display_mode: z.string().optional(),
+      showCharCount: z.boolean().optional(),
+      width: z.number().optional(),
+      hidden_in_forms: z.boolean().optional(),
+    }).optional().default({}),
+  };
 
-// Number field specific schema
-const numberFieldSchema = baseFieldSchema.extend({
-  settings: z.object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-    step: z.number().optional(),
-    defaultValue: z.number().optional(),
-    placeholder: z.string().optional(),
-  }),
-});
-
-// Date field specific schema
-const dateFieldSchema = baseFieldSchema.extend({
-  settings: z.object({
-    minDate: z.string().optional(),
-    maxDate: z.string().optional(),
-    defaultToday: z.boolean().optional(),
-    format: z.string().optional(),
-  }),
-});
-
-// Boolean field specific schema
-const booleanFieldSchema = baseFieldSchema.extend({
-  settings: z.object({
-    defaultValue: z.boolean().optional(),
-    labelTrue: z.string().optional(),
-    labelFalse: z.string().optional(),
-  }),
-});
-
-// Select field specific schema
-const selectFieldSchema = baseFieldSchema.extend({
-  settings: z.object({
-    options: z.array(z.object({
-      label: z.string(),
-      value: z.string(),
-    })).min(1),
-    multiple: z.boolean().optional(),
-    defaultValue: z.union([z.string(), z.array(z.string())]).optional(),
-  }),
-});
-
-// Helper function to get the appropriate schema based on field type
-const getSchemaForFieldType = (fieldType: string | null) => {
   switch (fieldType) {
     case 'text':
-    case 'textarea':
-      return textFieldSchema;
+      return z.object({
+        ...baseSchema,
+        defaultValue: z.string().optional(),
+        keyFilter: z.enum(['none', 'letters', 'numbers', 'alphanumeric']).optional(),
+      });
     case 'number':
-      return numberFieldSchema;
-    case 'date':
-      return dateFieldSchema;
-    case 'boolean':
-      return booleanFieldSchema;
-    case 'select':
-      return selectFieldSchema;
-    // Add more field type schemas as needed
+      return z.object({
+        ...baseSchema,
+        defaultValue: z.number().optional(),
+        min: z.number().optional(),
+        max: z.number().optional(),
+      });
+    case 'password':
+      return z.object({
+        ...baseSchema,
+        showToggle: z.boolean().optional().default(true),
+      });
+    case 'mask':
+      return z.object({
+        ...baseSchema,
+        mask: z.string().optional(),
+      });
+    case 'otp':
+      return z.object({
+        ...baseSchema,
+        length: z.number().min(4).max(12).optional().default(6),
+      });
+    case 'tags':
+      return z.object({
+        ...baseSchema,
+        maxTags: z.number().optional().default(10),
+      });
+    case 'slug':
+      return z.object({
+        ...baseSchema,
+        prefix: z.string().optional(),
+        suffix: z.string().optional(),
+      });
+    case 'markdown':
+    case 'textarea':
+      return z.object({
+        ...baseSchema,
+        rows: z.number().optional().default(8),
+      });
+    case 'blockeditor':
+    case 'wysiwyg':
+      return z.object({
+        ...baseSchema,
+        minHeight: z.string().optional().default('200px'),
+      });
     default:
-      return baseFieldSchema;
+      return z.object(baseSchema);
   }
 };
 
 interface FieldConfigPanelProps {
   fieldType: string | null;
-  fieldData?: any; // Existing field data for editing
-  onSave: (fieldData: any) => void;
+  fieldData?: any;
+  onSave: (data: any) => void;
   onCancel: () => void;
+  onUpdateAdvanced: (data: any) => void;
 }
 
-export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: FieldConfigPanelProps) {
-  const [activeTab, setActiveTab] = useState("general");
+export function FieldConfigPanel({ 
+  fieldType, 
+  fieldData, 
+  onSave, 
+  onCancel, 
+  onUpdateAdvanced 
+}: FieldConfigPanelProps) {
+  const [activeTab, setActiveTab] = useState('general');
+  const [validationSettings, setValidationSettings] = useState({});
+  const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>({});
+  const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({});
   
-  // Default values based on field type
-  const getDefaultValues = () => {
-    const baseDefaults = {
-      name: "",
-      description: "",
+  useEffect(() => {
+    if (fieldData) {
+      setValidationSettings(fieldData.validation || {});
+      setAppearanceSettings(fieldData.appearance || {});
+      setAdvancedSettings(fieldData.advanced || {});
+    }
+  }, [fieldData]);
+  
+  const fieldSchema = getFieldSchema(fieldType);
+  
+  const form = useForm({
+    resolver: zodResolver(fieldSchema),
+    defaultValues: fieldData || {
+      name: '',
+      description: '',
+      helpText: '',
       required: false,
+      defaultValue: fieldType === 'number' ? 0 : '',
       ui_options: {
-        placeholder: "",
-        help_text: "",
-        display_mode: "default",
+        placeholder: '',
+        help_text: '',
+        display_mode: 'default',
         showCharCount: false,
         width: 100,
-        hidden_in_forms: false,
+        hidden_in_forms: false
       }
-    };
-
-    switch(fieldType) {
-      case 'text':
-      case 'textarea':
-        return {
-          ...baseDefaults,
-          settings: {
-            minLength: 0,
-            maxLength: 100,
-            placeholder: "",
-            defaultValue: "",
-          }
-        };
-      case 'number':
-        return {
-          ...baseDefaults,
-          settings: {
-            min: 0,
-            max: 100,
-            step: 1,
-            defaultValue: 0,
-            placeholder: "Enter a number",
-          }
-        };
-      case 'date':
-        return {
-          ...baseDefaults,
-          settings: {
-            minDate: "",
-            maxDate: "",
-            defaultToday: false,
-            format: "yyyy-MM-dd",
-          }
-        };
-      case 'boolean':
-        return {
-          ...baseDefaults,
-          settings: {
-            defaultValue: false,
-            labelTrue: "Yes",
-            labelFalse: "No",
-          }
-        };
-      case 'select':
-        return {
-          ...baseDefaults,
-          settings: {
-            options: [{ label: "Option 1", value: "option1" }],
-            multiple: false,
-            defaultValue: "",
-          }
-        };
-      default:
-        return baseDefaults;
     }
-  };
-  
-  // Set up form with the appropriate schema based on field type
-  const form = useForm<any>({
-    resolver: zodResolver(getSchemaForFieldType(fieldType)),
-    defaultValues: fieldData || getDefaultValues(),
   });
 
-  const handleSubmit = (data: any) => {
-    onSave(data);
+  const handleSubmit = (values: any) => {
+    const combinedData = {
+      ...values,
+      validation: validationSettings,
+      appearance: appearanceSettings,
+      advanced: advancedSettings,
+    };
+    
+    onSave(combinedData);
   };
 
-  const renderSpecificSettings = () => {
-    if (!fieldType) return null;
+  const handleUpdateValidation = (data: any) => {
+    setValidationSettings(data);
+  };
+
+  const handleUpdateAppearance = (data: any) => {
+    setAppearanceSettings(data);
+  };
+
+  const handleUpdateAdvanced = (data: any) => {
+    setAdvancedSettings(data);
+    onUpdateAdvanced(data);
+  };
+
+  const renderFieldPreview = () => {
+    const fieldName = form.watch('name') || "Field Label";
+    const placeholder = form.watch('ui_options.placeholder') || "Enter value...";
+    const helpText = form.watch('helpText');
 
     switch (fieldType) {
       case 'text':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <InputTextField
+              id="preview-field"
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              keyFilter={form.watch('keyFilter') || "none"}
+              floatLabel={appearanceSettings.floatLabel}
+              filled={appearanceSettings.filled}
+            />
+          </div>
+        );
+      case 'number':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <NumberInputField
+              id="preview-number"
+              value={0}
+              onChange={() => {}}
+              label={fieldName}
+              min={form.watch('min')}
+              max={form.watch('max')}
+              placeholder={placeholder}
+              floatLabel={appearanceSettings.floatLabel}
+              filled={appearanceSettings.filled}
+              showButtons={advancedSettings.showButtons}
+              buttonLayout={advancedSettings.buttonLayout || "horizontal"}
+              prefix={advancedSettings.prefix}
+              suffix={advancedSettings.suffix}
+            />
+          </div>
+        );
+      case 'password':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <PasswordInputField
+              id="preview-password"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              floatLabel={appearanceSettings.floatLabel}
+              filled={appearanceSettings.filled}
+              helpText={helpText}
+            />
+          </div>
+        );
+      case 'mask':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <MaskInputField
+              id="preview-mask"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              mask={advancedSettings.mask || ''}
+              floatLabel={appearanceSettings.floatLabel}
+              filled={appearanceSettings.filled}
+              helpText={helpText}
+            />
+          </div>
+        );
+      case 'otp':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <OTPInputField
+              id="preview-otp"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              length={form.watch('length') || 6}
+              helpText={helpText}
+            />
+          </div>
+        );
+      case 'autocomplete':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <AutocompleteInputField
+              id="preview-autocomplete"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              options={[
+                { label: 'Option 1', value: 'option1' },
+                { label: 'Option 2', value: 'option2' },
+                { label: 'Option 3', value: 'option3' }
+              ]}
+              floatLabel={appearanceSettings.floatLabel}
+              filled={appearanceSettings.filled}
+              helpText={helpText}
+            />
+          </div>
+        );
+      case 'blockeditor':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <BlockEditorField
+              id="preview-blockeditor"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              minHeight="100px"
+            />
+          </div>
+        );
+      case 'wysiwyg':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <WysiwygEditorField
+              id="preview-wysiwyg"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              minHeight="100px"
+            />
+          </div>
+        );
+      case 'markdown':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <MarkdownEditorField
+              id="preview-markdown"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              rows={4}
+            />
+          </div>
+        );
+      case 'tags':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <TagsInputField
+              id="preview-tags"
+              value={[]}
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              maxTags={form.watch('maxTags') || 10}
+            />
+          </div>
+        );
+      case 'slug':
+        return (
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <SlugInputField
+              id="preview-slug"
+              value=""
+              onChange={() => {}}
+              label={fieldName}
+              placeholder={placeholder}
+              helpText={helpText}
+              prefix={form.watch('prefix') || ''}
+              suffix={form.watch('suffix') || ''}
+            />
+          </div>
+        );
       case 'textarea':
         return (
-          <>
-            <FormField
-              control={form.control}
-              name="settings.minLength"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Minimum Length</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      value={field.value || 0}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The minimum number of characters allowed
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+          <div className="mt-4 p-4 border rounded-md">
+            <h3 className="text-sm font-medium mb-2">Field Preview:</h3>
+            <div className="space-y-2">
+              <Label htmlFor="preview-textarea">{fieldName}</Label>
+              <Textarea
+                id="preview-textarea"
+                placeholder={placeholder}
+                rows={form.watch('rows') || 5}
+              />
+              {helpText && (
+                <p className="text-muted-foreground text-xs">{helpText}</p>
               )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.maxLength"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maximum Length</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      value={field.value || 100}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The maximum number of characters allowed
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.placeholder"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Placeholder</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Text shown when the field is empty
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.defaultValue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Default Value</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Pre-filled value when creating new content
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+            </div>
+          </div>
         );
-      
+      default:
+        return null;
+    }
+  };
+
+  const renderFieldTypeSpecificOptions = () => {
+    switch (fieldType) {
+      case 'text':
+        return (
+          <FormField
+            control={form.control}
+            name="keyFilter"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Key Filter</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select key filter" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="letters">Letters only</SelectItem>
+                    <SelectItem value="numbers">Numbers only</SelectItem>
+                    <SelectItem value="alphanumeric">Alphanumeric</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Restrict input to specific character types
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+        );
       case 'number':
         return (
           <>
-            <FormField
-              control={form.control}
-              name="settings.min"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Minimum Value</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.max"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maximum Value</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.step"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Step</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The increment/decrement step value
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum Value</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        {...field}
+                        onChange={e => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum Value</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        {...field}
+                        onChange={e => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </>
         );
-      
-      case 'date':
+      case 'otp':
         return (
-          <>
-            <FormField
-              control={form.control}
-              name="settings.defaultToday"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Default to today</FormLabel>
-                    <FormDescription>
-                      Use the current date as default value
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="settings.format"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date Format</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Format for displaying and storing dates (e.g., yyyy-MM-dd)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+          <FormField
+            control={form.control}
+            name="length"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>OTP Length</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number"
+                    min={4}
+                    max={12}
+                    {...field}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Number of digits in the OTP input (4-12)
+                </FormDescription>
+              </FormItem>
+            )}
+          />
         );
-      
-      case 'boolean':
+      case 'tags':
         return (
-          <>
+          <FormField
+            control={form.control}
+            name="maxTags"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Maximum Tags</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number"
+                    min={1}
+                    {...field}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Maximum number of tags allowed
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+        );
+      case 'slug':
+        return (
+          <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="settings.defaultValue"
+              name="prefix"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Default Value</FormLabel>
-                    <FormDescription>
-                      Initial state of the boolean field
-                    </FormDescription>
-                  </div>
+                <FormItem>
+                  <FormLabel>Prefix</FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <Input 
+                      placeholder="e.g. /blog/"
+                      {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Text to display before the slug
+                  </FormDescription>
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
-              name="settings.labelTrue"
+              name="suffix"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>True Label</FormLabel>
+                  <FormLabel>Suffix</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input 
+                      placeholder="e.g. .html"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
-                    Label for the true/on state
+                    Text to display after the slug
                   </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="settings.labelFalse"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>False Label</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Label for the false/off state
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+          </div>
         );
-      
-      // Add more field type specific settings as needed
-      
+      case 'markdown':
+      case 'textarea':
+        return (
+          <FormField
+            control={form.control}
+            name="rows"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Default Rows</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number"
+                    min={3}
+                    {...field}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Initial height of the text area
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+        );
+      case 'blockeditor':
+      case 'wysiwyg':
+        return (
+          <FormField
+            control={form.control}
+            name="minHeight"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minimum Height</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="e.g. 200px"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Minimum height of the editor (CSS value)
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+        );
       default:
-        return <p className="text-gray-500">No specific settings for this field type</p>;
+        return null;
     }
   };
 
@@ -464,94 +623,146 @@ export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: Fie
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 mb-4">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="validation">Validation</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100">
+            <TabsTrigger value="general" className="data-[state=active]:bg-white">General</TabsTrigger>
+            <TabsTrigger value="validation" className="data-[state=active]:bg-white">Validation</TabsTrigger>
+            <TabsTrigger value="appearance" className="data-[state=active]:bg-white">Appearance</TabsTrigger>
+            <TabsTrigger value="advanced" className="data-[state=active]:bg-white">Advanced</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="general" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Field Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter field name..." {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The display name for this field
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter description..." 
-                      className="resize-none" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Help text explaining this field's purpose
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="required"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Required Field</FormLabel>
+          <TabsContent value="general">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Field Name <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter field name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter field description" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="helpText"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Help Text</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Additional help text" {...field} />
+                    </FormControl>
                     <FormDescription>
-                      Make this field mandatory for content creation
+                      Provide additional context or guidance for this field
                     </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Required Field</FormLabel>
+                      <FormDescription>
+                        Make this field mandatory for content creation
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="ui_options.placeholder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Placeholder</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter placeholder text" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Text displayed when the field is empty
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+              
+              {renderFieldTypeSpecificOptions()}
+              
+              {renderFieldPreview()}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="validation">
+            <FieldValidationPanel 
+              fieldType={fieldType}
+              initialData={validationSettings}
+              onUpdate={handleUpdateValidation}
             />
           </TabsContent>
           
-          <TabsContent value="validation" className="space-y-4">
-            {fieldType ? renderSpecificSettings() : (
-              <p className="text-gray-500">Please select a field type first</p>
-            )}
+          <TabsContent value="appearance">
+            <FieldAppearancePanel
+              fieldType={fieldType}
+              initialData={appearanceSettings}
+              onSave={handleUpdateAppearance}
+            />
           </TabsContent>
           
-          <TabsContent value="appearance" className="space-y-4">
-            <FieldAppearancePanel form={form} fieldType={fieldType} />
-          </TabsContent>
-          
-          <TabsContent value="advanced" className="space-y-4">
-            <p className="text-gray-500">Advanced settings will be added soon</p>
+          <TabsContent value="advanced">
+            <FieldAdvancedTab
+              fieldType={fieldType}
+              fieldData={{
+                advanced: advancedSettings
+              }}
+              onUpdate={(data) => {
+                if (data.advanced) {
+                  handleUpdateAdvanced(data.advanced);
+                }
+              }}
+            />
           </TabsContent>
         </Tabs>
         
-        <div className="flex justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex justify-end space-x-4 mt-6">
+          <Button 
+            type="button" 
+            onClick={onCancel} 
+            variant="outline"
+            className="px-4 py-2"
+          >
             Cancel
           </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            type="submit" 
+            variant="default"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700"
+          >
             Save Field
           </Button>
         </div>
@@ -559,3 +770,5 @@ export function FieldConfigPanel({ fieldType, fieldData, onSave, onCancel }: Fie
     </Form>
   );
 }
+
+export default FieldConfigPanel;

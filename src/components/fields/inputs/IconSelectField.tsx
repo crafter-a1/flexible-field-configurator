@@ -7,6 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LucideProps } from 'lucide-react';
 
 interface IconSelectFieldProps {
   id: string;
@@ -55,6 +56,15 @@ export const IconSelectField = ({
 
   const SelectedIcon = getIconComponent(value);
 
+  // Render the icon component using React.createElement with proper type safety
+  const renderIcon = (iconName: string) => {
+    const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons];
+    if (typeof IconComponent === 'function') {
+      return React.createElement(IconComponent, { className: "h-5 w-5" });
+    }
+    return null;
+  };
+
   return (
     <div className={cn("space-y-2", className)}>
       <Label htmlFor={id}>
@@ -73,7 +83,7 @@ export const IconSelectField = ({
             id={id}
           >
             <div className="flex items-center gap-2">
-              {SelectedIcon && <SelectedIcon className="h-4 w-4" />}
+              {SelectedIcon && React.createElement(SelectedIcon, { className: "h-4 w-4" })}
               <span>{value || "Select an icon..."}</span>
             </div>
             <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -91,22 +101,19 @@ export const IconSelectField = ({
               <CommandGroup>
                 <ScrollArea className="h-72">
                   <div className="grid grid-cols-4 gap-2 p-2">
-                    {filteredIcons.map((iconName) => {
-                      const IconComp = LucideIcons[iconName as keyof typeof LucideIcons];
-                      return (
-                        <CommandItem
-                          key={iconName}
-                          onSelect={() => {
-                            onChange(iconName);
-                            setOpen(false);
-                          }}
-                          className="flex flex-col items-center justify-center p-2 cursor-pointer"
-                        >
-                          <IconComp className="h-5 w-5" />
-                          <span className="text-xs mt-1 truncate w-full text-center">{iconName}</span>
-                        </CommandItem>
-                      );
-                    })}
+                    {filteredIcons.map((iconName) => (
+                      <CommandItem
+                        key={iconName}
+                        onSelect={() => {
+                          onChange(iconName);
+                          setOpen(false);
+                        }}
+                        className="flex flex-col items-center justify-center p-2 cursor-pointer"
+                      >
+                        {renderIcon(iconName)}
+                        <span className="text-xs mt-1 truncate w-full text-center">{iconName}</span>
+                      </CommandItem>
+                    ))}
                   </div>
                 </ScrollArea>
               </CommandGroup>

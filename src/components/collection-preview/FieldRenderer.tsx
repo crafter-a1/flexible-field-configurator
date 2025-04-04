@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,6 +24,16 @@ import { MultiFileInputField } from '@/components/fields/inputs/MultiFileInputFi
 import { JSONEditorField } from '@/components/fields/inputs/JSONEditorField';
 import { RatingField } from '@/components/fields/inputs/RatingField';
 import { SliderField } from '@/components/fields/inputs/SliderField';
+import { HashInputField } from '@/components/fields/inputs/HashInputField';
+import { IconSelectField } from '@/components/fields/inputs/IconSelectField';
+import { ListboxField } from '@/components/fields/inputs/ListboxField';
+import { TreeViewField } from '@/components/fields/inputs/TreeViewField';
+import { InlineRepeaterField } from '@/components/fields/inputs/InlineRepeaterField';
+import { DividerField } from '@/components/fields/inputs/DividerField';
+import { SuperHeaderField } from '@/components/fields/inputs/SuperHeaderField';
+import { DetailGroupField } from '@/components/fields/inputs/DetailGroupField';
+import { RawGroupField } from '@/components/fields/inputs/RawGroupField';
+import { CollectionItemField } from '@/components/fields/inputs/CollectionItemField';
 
 interface FieldRendererProps {
   field: any;
@@ -299,6 +308,113 @@ export function FieldRenderer({ field, formData, titleField, onInputChange }: Fi
           markStep={field.advanced?.markStep}
         />
       );
+    case 'hash':
+      return (
+        <HashInputField
+          {...commonProps}
+          placeholder={field.placeholder || `Enter hash value`}
+        />
+      );
+      
+    case 'icon':
+      return (
+        <IconSelectField
+          {...commonProps}
+        />
+      );
+      
+    case 'listbox':
+      return (
+        <ListboxField
+          {...commonProps}
+          placeholder={field.placeholder || `Select an option`}
+          options={field.options || []}
+        />
+      );
+      
+    case 'treeView':
+      return (
+        <TreeViewField
+          {...commonProps}
+          items={field.items || []}
+          selectedIds={formData[field.api_id] || []}
+          multiSelect={field.multiSelect !== false}
+        />
+      );
+      
+    case 'inlineRepeater':
+      return (
+        <InlineRepeaterField
+          {...commonProps}
+          fields={field.fields || []}
+          value={formData[field.api_id] || []}
+          addButtonText={field.addButtonText || "Add Item"}
+          initialItemData={field.initialItemData || {}}
+        />
+      );
+      
+    case 'divider':
+      return (
+        <DividerField
+          id={field.api_id}
+          label={field.name}
+          className="mb-5"
+          color={field.color || 'muted'}
+          thickness={field.thickness || 1}
+          style={field.style || 'solid'}
+        />
+      );
+      
+    case 'superHeader':
+      return (
+        <SuperHeaderField
+          id={field.api_id}
+          text={field.name}
+          className="mb-5"
+          size={field.size || 'lg'}
+          color={field.color || 'default'}
+          align={field.align || 'left'}
+          hasDivider={field.hasDivider || false}
+        />
+      );
+      
+    case 'detailGroup':
+      return (
+        <DetailGroupField
+          id={field.api_id}
+          title={field.name}
+          description={field.description}
+          items={field.items || []}
+          className="mb-5"
+          maxHeight={field.maxHeight}
+          bordered={field.bordered !== false}
+          labelWidth={field.labelWidth || 'auto'}
+        />
+      );
+      
+    case 'rawGroup':
+      return (
+        <RawGroupField
+          id={field.api_id}
+          className="mb-5"
+        >
+          {field.children}
+        </RawGroupField>
+      );
+      
+    case 'collectionItem':
+      return (
+        <CollectionItemField
+          {...commonProps}
+          collection={field.collection || ''}
+          placeholder={field.placeholder || `Select item`}
+          multiple={field.multiple || false}
+          displayField={field.displayField || 'title'}
+          searchFields={field.searchFields || ['title']}
+          items={field.items || []}
+        />
+      );
+      
     default:
       return <div key={field.id}>Unknown field type: {field.type}</div>;
   }

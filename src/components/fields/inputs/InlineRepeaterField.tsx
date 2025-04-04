@@ -7,7 +7,7 @@ import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-interface RepeaterItem {
+export interface RepeaterItem {
   id: string;
   [key: string]: any;
 }

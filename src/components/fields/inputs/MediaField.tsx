@@ -27,10 +27,10 @@ interface FilePreviewProps {
 }
 
 const FilePreview = ({ file, onRemove, onReplace, disabled = false }: FilePreviewProps) => {
-  const isFileObj = typeof file !== 'string' && file !== null;
-  const fileName = isFileObj ? file.name : (file || '');
-  const fileType = isFileObj ? file.type : '';
-  const fileSize = isFileObj ? file.size : 0;
+  const isFileObj = file instanceof File;
+  const fileName = isFileObj ? (file as File).name : (file as string || '');
+  const fileType = isFileObj ? (file as File).type : '';
+  const fileSize = isFileObj ? (file as File).size : 0;
   
   // Format file size
   const formatFileSize = (bytes: number): string => {
@@ -41,16 +41,24 @@ const FilePreview = ({ file, onRemove, onReplace, disabled = false }: FilePrevie
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const isImage = fileType.startsWith('image/') || 
-    (typeof file === 'string' && (/\.(jpg|jpeg|png|gif|webp|svg)$/i).test(file));
+  // Get the last part of a path or URL (file name)
+  const getFileName = (path: string): string => {
+    if (!path) return '';
+    return path.split('/').pop() || path;
+  };
+
+  // Determine if it's an image based on file type or extension
+  const isImage = 
+    (isFileObj && (file as File).type.startsWith('image/')) || 
+    (typeof file === 'string' && (/\.(jpg|jpeg|png|gif|webp|svg)$/i).test(file as string));
   
   return (
     <div className="flex items-center p-2 border rounded-md">
       <div className="flex items-center justify-center h-20 w-20 bg-muted/30 rounded mr-3 overflow-hidden">
         {isImage ? (
           <img 
-            src={isFileObj ? URL.createObjectURL(file as File) : String(file)} 
-            alt={fileName}
+            src={isFileObj ? URL.createObjectURL(file as File) : (file as string)} 
+            alt={isFileObj ? (file as File).name : getFileName(file as string)}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -58,7 +66,9 @@ const FilePreview = ({ file, onRemove, onReplace, disabled = false }: FilePrevie
         )}
       </div>
       <div className="flex-1">
-        <p className="font-medium text-sm truncate max-w-[180px]">{fileName.split('/').pop()}</p>
+        <p className="font-medium text-sm truncate max-w-[180px]">
+          {isFileObj ? (file as File).name : getFileName(file as string)}
+        </p>
         <p className="text-xs text-muted-foreground">
           {fileType.split('/').pop()?.toUpperCase() || 'FILE'} • {formatFileSize(fileSize)}
         </p>

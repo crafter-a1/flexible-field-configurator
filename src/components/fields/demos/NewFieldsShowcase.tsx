@@ -7,8 +7,10 @@ import NoticeField from '../inputs/NoticeField';
 import ButtonLinksField from '../inputs/ButtonLinksField';
 import ModalField from '../inputs/ModalField';
 import DetailGroupField from '../inputs/DetailGroupField';
-import InlineRepeaterField from '../inputs/InlineRepeaterField';
+import InlineRepeaterField, { RepeaterItem } from '../inputs/InlineRepeaterField';
 import IconSelectField from '../inputs/IconSelectField';
+import CheckboxCardsField from '../inputs/CheckboxCardsField';
+import AutocompleteInputField from '../inputs/AutocompleteInputField';
 
 export const NewFieldsShowcase = () => {
   // Translation Field
@@ -45,11 +47,16 @@ export const NewFieldsShowcase = () => {
     }
   ];
 
-  // Repeater Field
-  const [repeaterItems, setRepeaterItems] = useState([
+  // Repeater Field - Fix the typing to match RepeaterItem
+  const [repeaterItems, setRepeaterItems] = useState<RepeaterItem[]>([
     { id: '1', label: 'Item 1 Name', value: 'Item 1 Value' },
     { id: '2', label: 'Item 2 Name', value: 'Item 2 Value' }
   ]);
+
+  // Handle the repeater item changes properly
+  const handleRepeaterChange = (items: RepeaterItem[]) => {
+    setRepeaterItems(items);
+  };
 
   // Icon Select
   const [selectedIcon, setSelectedIcon] = useState('');
@@ -57,6 +64,19 @@ export const NewFieldsShowcase = () => {
   // Notice states for dismissible notices
   const [showInfoNotice, setShowInfoNotice] = useState(true);
   const [showWarningNotice, setShowWarningNotice] = useState(true);
+  
+  // Checkbox Cards Field
+  const [checkboxValues, setCheckboxValues] = useState<string[]>(['option1']);
+  
+  // Autocomplete Field
+  const [autocompleteValue, setAutocompleteValue] = useState('');
+  const autocompleteOptions = [
+    { label: 'Apple', value: 'apple' },
+    { label: 'Banana', value: 'banana' },
+    { label: 'Cherry', value: 'cherry' },
+    { label: 'Date', value: 'date' },
+    { label: 'Elderberry', value: 'elderberry' }
+  ];
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto p-6">
@@ -121,7 +141,7 @@ export const NewFieldsShowcase = () => {
               id="repeater-demo"
               label="Repeater Field"
               value={repeaterItems}
-              onChange={setRepeaterItems}
+              onChange={handleRepeaterChange}
               fields={[
                 { key: 'label', label: 'Label' },
                 { key: 'value', label: 'Value' }
@@ -226,7 +246,38 @@ export const NewFieldsShowcase = () => {
                 { label: "Role", value: "Administrator" },
                 { label: "Status", value: "Active" }
               ]}
-              helpText="Display grouped data in a structured format"
+            />
+            <p className="text-sm text-muted-foreground mt-2">Display grouped data in a structured format</p>
+          </div>
+          
+          {/* Checkbox Cards Field */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3">Checkbox Cards</h3>
+            <CheckboxCardsField
+              id="checkbox-cards-demo"
+              label="Checkbox Cards"
+              value={checkboxValues}
+              onChange={setCheckboxValues}
+              options={[
+                { label: 'Option 1', value: 'option1', description: 'This is the first option' },
+                { label: 'Option 2', value: 'option2', description: 'This is the second option' },
+                { label: 'Option 3', value: 'option3', description: 'This is the third option' }
+              ]}
+              helpText="Select multiple options from cards"
+            />
+          </div>
+          
+          {/* Autocomplete Field */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3">Autocomplete</h3>
+            <AutocompleteInputField
+              id="autocomplete-demo"
+              label="Autocomplete"
+              value={autocompleteValue}
+              onChange={setAutocompleteValue}
+              options={autocompleteOptions}
+              placeholder="Start typing..."
+              helpText="Search and select from a list of options"
             />
           </div>
         </section>

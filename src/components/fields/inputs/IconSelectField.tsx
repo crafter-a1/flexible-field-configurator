@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import * as icons from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LucideIcon } from 'lucide-react';
 
 type IconName = keyof typeof icons;
 
@@ -96,10 +97,8 @@ export const IconSelectField = ({
   const renderSelectedIcon = () => {
     if (!value) return null;
     
-    const IconComponent = icons[value];
-    if (!IconComponent) return null;
-    
-    return <IconComponent className="h-5 w-5" />;
+    const IconComponent = icons[value] as LucideIcon;
+    return IconComponent ? <IconComponent className="h-5 w-5" /> : null;
   };
 
   return (
@@ -196,10 +195,10 @@ export const IconSelectField = ({
                 </div>
               ) : (
                 filteredIcons.map(icon => {
-                  const IconComponent = icons[icon.name];
+                  const IconComponent = icons[icon.name] as LucideIcon;
                   const isSelected = value === icon.name;
                   
-                  return (
+                  return IconComponent ? (
                     <Button
                       key={icon.name}
                       type="button"
@@ -212,9 +211,9 @@ export const IconSelectField = ({
                       onClick={() => handleSelect(icon.name)}
                       title={icon.name}
                     >
-                      {IconComponent && <IconComponent className="h-5 w-5" />}
+                      <IconComponent className="h-5 w-5" />
                     </Button>
-                  );
+                  ) : null;
                 })
               )}
             </div>

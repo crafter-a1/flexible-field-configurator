@@ -11,6 +11,7 @@ import InlineRepeaterField, { RepeaterItem } from '../inputs/InlineRepeaterField
 import IconSelectField from '../inputs/IconSelectField';
 import CheckboxCardsField from '../inputs/CheckboxCardsField';
 import AutocompleteInputField from '../inputs/AutocompleteInputField';
+import * as icons from 'lucide-react';
 
 export const NewFieldsShowcase = () => {
   // Translation Field
@@ -59,7 +60,7 @@ export const NewFieldsShowcase = () => {
   };
 
   // Icon Select
-  const [selectedIcon, setSelectedIcon] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState<keyof typeof icons | null>(null);
 
   // Notice states for dismissible notices
   const [showInfoNotice, setShowInfoNotice] = useState(true);

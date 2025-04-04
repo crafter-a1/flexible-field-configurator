@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DetailItem {
-  id: string;
   label: string;
-  value: React.ReactNode;
+  value: string | React.ReactNode;
 }
 
 interface DetailGroupFieldProps {
@@ -16,71 +15,53 @@ interface DetailGroupFieldProps {
   description?: string;
   items: DetailItem[];
   className?: string;
-  maxHeight?: number;
+  maxHeight?: string | number;
   bordered?: boolean;
-  labelWidth?: 'auto' | 'narrow' | 'wide' | 'equal';
+  labelWidth?: string | number;
 }
 
 export const DetailGroupField = ({
   id,
   title,
   description,
-  items,
+  items = [],
   className,
   maxHeight,
   bordered = true,
   labelWidth = 'auto'
 }: DetailGroupFieldProps) => {
-  const labelClass = cn({
-    'w-1/3': labelWidth === 'narrow',
-    'w-1/2': labelWidth === 'wide',
-    'w-1/2': labelWidth === 'equal',
-    'w-1/4': labelWidth === 'auto',
-  });
+  const scrollAreaStyles = {
+    maxHeight: maxHeight || undefined,
+  };
 
-  const valueClass = cn({
-    'w-2/3': labelWidth === 'narrow',
-    'w-1/2': labelWidth === 'wide',
-    'w-1/2': labelWidth === 'equal',
-    'w-3/4': labelWidth === 'auto',
-  });
-
-  const content = (
-    <div className="space-y-4">
-      {items.map(item => (
-        <div key={item.id} className="flex flex-col sm:flex-row">
-          <div className={cn("font-medium text-muted-foreground mb-1 sm:mb-0", labelClass)}>
-            {item.label}
-          </div>
-          <div className={valueClass}>
-            {item.value}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const labelStyles = {
+    width: labelWidth || 'auto',
+  };
 
   return (
-    <Card
-      id={id}
-      className={cn(
-        "w-full",
-        !bordered && "border-0 shadow-none",
-        className
-      )}
-    >
+    <Card className={cn(bordered ? '' : 'border-0 shadow-none', className)} id={id}>
       <CardHeader className="pb-3">
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
-        {maxHeight ? (
-          <ScrollArea className="pr-4" style={{ maxHeight: `${maxHeight}px` }}>
-            {content}
-          </ScrollArea>
-        ) : (
-          content
-        )}
+      <CardContent className="pt-0">
+        <ScrollArea style={scrollAreaStyles}>
+          <dl className="divide-y divide-gray-100">
+            {items.map((item, index) => (
+              <div key={index} className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt 
+                  className="text-sm font-medium text-gray-900"
+                  style={labelStyles}
+                >
+                  {item.label}
+                </dt>
+                <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { CheckIcon, ChevronUpDownIcon } from 'lucide-react';
+import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,7 @@ export const ListboxField = ({
             id={id}
           >
             {value ? displayValue : placeholder}
-            <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">

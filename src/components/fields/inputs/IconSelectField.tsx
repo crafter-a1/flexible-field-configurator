@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import * as Icons from 'lucide-react';
-import { Search } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface IconSelectFieldProps {
   id: string;
@@ -17,9 +16,8 @@ interface IconSelectFieldProps {
   required?: boolean;
   helpText?: string | null;
   className?: string;
+  disabled?: boolean;
 }
-
-type IconKey = keyof typeof Icons;
 
 export const IconSelectField = ({
   id,
@@ -28,21 +26,34 @@ export const IconSelectField = ({
   onChange,
   required = false,
   helpText = null,
-  className
+  className,
+  disabled = false
 }: IconSelectFieldProps) => {
-  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Get all available icons from Lucide
+  const iconNames = Object.keys(LucideIcons)
+    .filter(key => 
+      // Filter out non-icon exports
+      key !== 'createLucideIcon' && 
+      key !== 'default' && 
+      typeof LucideIcons[key as keyof typeof LucideIcons] === 'function'
+    );
   
-  // Filter out non-icon exports like "createLucideIcon"
-  const iconNames = Object.keys(Icons).filter(
-    key => typeof Icons[key as IconKey] === 'function' && key !== 'createLucideIcon'
-  ) as IconKey[];
-  
-  const filteredIcons = iconNames.filter(name => 
-    name.toLowerCase().includes(search.toLowerCase())
-  );
-  
-  const selectedIcon = value as IconKey;
-  const SelectedIconComponent = selectedIcon && Icons[selectedIcon] ? Icons[selectedIcon] : Icons.HelpCircle;
+  // Filter icons based on search query
+  const filteredIcons = searchQuery ? 
+    iconNames.filter(name => name.toLowerCase().includes(searchQuery.toLowerCase())) : 
+    iconNames;
+
+  // Get the selected icon component
+  const getIconComponent = (iconName: string) => {
+    if (!iconName) return null;
+    const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons];
+    return IconComponent ? IconComponent : null;
+  };
+
+  const SelectedIcon = getIconComponent(value);
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -50,58 +61,60 @@ export const IconSelectField = ({
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
-      
-      <Popover>
+
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            className="w-full justify-start text-left font-normal"
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+            disabled={disabled}
             id={id}
           >
             <div className="flex items-center gap-2">
-              <SelectedIconComponent className="h-4 w-4" />
-              <span className="ml-2">{selectedIcon || "Select an icon"}</span>
+              {SelectedIcon && React.createElement(SelectedIcon as React.ComponentType, { className: "h-4 w-4" })}
+              <span>{value || "Select an icon..."}</span>
             </div>
+            <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="start">
-          <div className="p-2 border-b">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Input
-                placeholder="Search icons..."
-                className="h-9 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          <ScrollArea className="h-[300px]">
-            <div className="grid grid-cols-4 p-2 gap-1">
-              {filteredIcons.map((iconName) => {
-                const IconComponent = Icons[iconName];
-                return (
-                  <Button
-                    key={iconName}
-                    variant="ghost"
-                    className={cn(
-                      "h-9 w-full justify-start text-xs p-2",
-                      value === iconName && "bg-accent text-accent-foreground"
-                    )}
-                    onClick={() => onChange(iconName)}
-                  >
-                    <div className="flex flex-col items-center justify-center w-full">
-                      <IconComponent className="h-4 w-4 mb-1" />
-                      <span className="truncate max-w-full">{iconName}</span>
-                    </div>
-                  </Button>
-                );
-              })}
-            </div>
-          </ScrollArea>
+        <PopoverContent className="w-64 p-0">
+          <Command>
+            <CommandInput 
+              placeholder="Search icons..." 
+              value={searchQuery} 
+              onValueChange={setSearchQuery} 
+            />
+            <CommandEmpty>No icon found.</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                <ScrollArea className="h-72">
+                  <div className="grid grid-cols-4 gap-2 p-2">
+                    {filteredIcons.map((iconName) => {
+                      const IconComp = LucideIcons[iconName as keyof typeof LucideIcons];
+                      return (
+                        <CommandItem
+                          key={iconName}
+                          onSelect={() => {
+                            onChange(iconName);
+                            setOpen(false);
+                          }}
+                          className="flex flex-col items-center justify-center p-2 cursor-pointer"
+                        >
+                          {React.createElement(IconComp as React.ComponentType, { className: "h-5 w-5" })}
+                          <span className="text-xs mt-1 truncate w-full text-center">{iconName}</span>
+                        </CommandItem>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
-      
+
       {helpText && (
         <p className="text-sm text-muted-foreground">{helpText}</p>
       )}

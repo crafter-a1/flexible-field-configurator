@@ -73,7 +73,7 @@ export const IconSelectField = ({
             id={id}
           >
             <div className="flex items-center gap-2">
-              {SelectedIcon && React.createElement(SelectedIcon as React.ComponentType, { className: "h-4 w-4" })}
+              {SelectedIcon && <SelectedIcon className="h-4 w-4" />}
               <span>{value || "Select an icon..."}</span>
             </div>
             <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -102,7 +102,7 @@ export const IconSelectField = ({
                           }}
                           className="flex flex-col items-center justify-center p-2 cursor-pointer"
                         >
-                          {React.createElement(IconComp as React.ComponentType, { className: "h-5 w-5" })}
+                          <IconComp className="h-5 w-5" />
                           <span className="text-xs mt-1 truncate w-full text-center">{iconName}</span>
                         </CommandItem>
                       );

@@ -7,9 +7,11 @@ interface SuperHeaderFieldProps {
   text: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  color?: 'default' | 'primary' | 'muted' | 'accent';
+  color?: 'default' | 'muted' | 'primary' | 'destructive';
   align?: 'left' | 'center' | 'right';
   hasDivider?: boolean;
+  dividerThickness?: number;
+  icon?: React.ReactNode;
 }
 
 export const SuperHeaderField = ({
@@ -19,49 +21,58 @@ export const SuperHeaderField = ({
   size = 'lg',
   color = 'default',
   align = 'left',
-  hasDivider = false
+  hasDivider = true,
+  dividerThickness = 2,
+  icon
 }: SuperHeaderFieldProps) => {
+  // Define size styles
+  const sizeStyles = {
+    sm: 'text-base',
+    md: 'text-lg',
+    lg: 'text-xl',
+    xl: 'text-2xl'
+  };
+
+  // Define color styles
+  const colorStyles = {
+    default: 'text-foreground border-border',
+    muted: 'text-muted-foreground border-muted',
+    primary: 'text-primary border-primary',
+    destructive: 'text-destructive border-destructive'
+  };
+
+  // Define alignment styles
+  const alignStyles = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right'
+  };
+
   return (
     <div 
-      id={id}
+      id={id} 
       className={cn(
-        "my-4",
-        {
-          'text-left': align === 'left',
-          'text-center': align === 'center',
-          'text-right': align === 'right',
-        },
+        "w-full my-4",
         className
       )}
     >
-      <h2
-        className={cn(
-          "font-bold",
-          {
-            'text-lg': size === 'sm',
-            'text-xl': size === 'md',
-            'text-2xl': size === 'lg',
-            'text-3xl': size === 'xl',
-            'text-foreground': color === 'default',
-            'text-primary': color === 'primary',
-            'text-muted-foreground': color === 'muted',
-            'text-blue-600': color === 'accent',
-          }
-        )}
-      >
+      <div className={cn(
+        "font-bold tracking-tight mb-2 flex items-center gap-2",
+        sizeStyles[size],
+        colorStyles[color],
+        alignStyles[align]
+      )}>
+        {icon && <div className="flex-shrink-0">{icon}</div>}
         {text}
-      </h2>
+      </div>
+      
       {hasDivider && (
-        <div
+        <div 
           className={cn(
-            "mt-2 h-0.5",
-            {
-              'bg-foreground': color === 'default',
-              'bg-primary': color === 'primary',
-              'bg-muted': color === 'muted',
-              'bg-blue-600': color === 'accent',
-            }
+            "w-full border-t",
+            colorStyles[color]
           )}
+          style={{ borderTopWidth: `${dividerThickness}px` }}
         />
       )}
     </div>

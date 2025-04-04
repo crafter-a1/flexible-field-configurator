@@ -1,59 +1,103 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 interface DividerFieldProps {
   id: string;
-  label?: string;
+  label?: string | null;
   className?: string;
-  color?: string;
+  color?: 'default' | 'muted' | 'primary' | 'destructive';
   thickness?: number;
   style?: 'solid' | 'dashed' | 'dotted';
+  labelPosition?: 'center' | 'left' | 'right';
 }
 
 export const DividerField = ({
   id,
-  label,
+  label = null,
   className,
   color = 'muted',
   thickness = 1,
-  style = 'solid'
+  style = 'solid',
+  labelPosition = 'center'
 }: DividerFieldProps) => {
-  return (
-    <div className={cn("py-4", className)} id={id}>
-      {label ? (
-        <div className="relative flex items-center py-2">
-          <Separator 
-            className={cn(
-              `absolute w-full ${style === 'dashed' ? 'border-dashed' : style === 'dotted' ? 'border-dotted' : 'border-solid'}`,
-              {
-                'bg-primary border-primary': color === 'primary',
-                'bg-muted border-muted': color === 'muted',
-                'bg-destructive border-destructive': color === 'destructive',
-                'bg-gray-200 border-gray-200': color === 'light',
-                'bg-gray-800 border-gray-800': color === 'dark',
-              }
-            )}
-            style={{ height: `${thickness}px` }}
-          />
-          <span className="relative bg-background px-2 text-sm font-medium text-muted-foreground">
-            {label}
-          </span>
-        </div>
-      ) : (
-        <Separator 
+  // Define color styles
+  const colorStyles = {
+    default: 'border-border',
+    muted: 'border-muted',
+    primary: 'border-primary',
+    destructive: 'border-destructive'
+  };
+
+  const borderStyle = {
+    solid: 'border-solid',
+    dashed: 'border-dashed',
+    dotted: 'border-dotted'
+  };
+
+  if (!label) {
+    return (
+      <div 
+        id={id} 
+        className={cn(
+          "w-full my-4",
+          className
+        )}
+      >
+        <div 
           className={cn(
-            `w-full ${style === 'dashed' ? 'border-dashed' : style === 'dotted' ? 'border-dotted' : 'border-solid'}`,
-            {
-              'bg-primary border-primary': color === 'primary',
-              'bg-muted border-muted': color === 'muted',
-              'bg-destructive border-destructive': color === 'destructive',
-              'bg-gray-200 border-gray-200': color === 'light',
-              'bg-gray-800 border-gray-800': color === 'dark',
-            }
+            "w-full border-t",
+            colorStyles[color],
+            borderStyle[style]
           )}
-          style={{ height: `${thickness}px` }}
+          style={{ borderTopWidth: `${thickness}px` }}
+        />
+      </div>
+    );
+  }
+
+  const labelPositionStyles = {
+    center: "justify-center",
+    left: "justify-start",
+    right: "justify-end"
+  };
+
+  return (
+    <div 
+      id={id} 
+      className={cn(
+        "w-full my-4 flex items-center",
+        className
+      )}
+    >
+      {labelPosition !== 'right' && (
+        <div 
+          className={cn(
+            "flex-grow border-t",
+            colorStyles[color],
+            borderStyle[style]
+          )}
+          style={{ borderTopWidth: `${thickness}px` }}
+        />
+      )}
+      
+      <div 
+        className={cn(
+          "px-4 text-sm font-medium text-muted-foreground",
+          labelPosition === 'center' ? 'mx-4' : 'mx-2'
+        )}
+      >
+        {label}
+      </div>
+      
+      {labelPosition !== 'left' && (
+        <div 
+          className={cn(
+            "flex-grow border-t",
+            colorStyles[color],
+            borderStyle[style]
+          )}
+          style={{ borderTopWidth: `${thickness}px` }}
         />
       )}
     </div>

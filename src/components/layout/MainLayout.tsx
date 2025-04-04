@@ -15,7 +15,7 @@ export function MainLayout({ children, className, defaultCollapsed }: MainLayout
       <div className="flex min-h-screen bg-gray-50 w-full overflow-x-hidden">
         <Sidebar />
         <main className={cn(
-          "flex-1 ml-0 md:ml-64 transition-all duration-300 ease-in-out w-full",
+          "flex-1 ml-0 md:ml-64 p-6 transition-all duration-300 ease-in-out w-full",
           className
         )}>
           {children}

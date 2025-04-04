@@ -36,6 +36,7 @@ const fieldTypes = {
     { id: 'list', name: 'List', description: 'Ordered or unordered list' },
     { id: 'slug', name: 'Slug', description: 'URL-friendly version of a name' },
     { id: 'seo', name: 'SEO Interface', description: 'Search engine optimization fields' },
+    { id: 'translation', name: 'Translation', description: 'Multilingual content editor' },
   ],
   'Selection': [
     { id: 'select', name: 'Dropdown', description: 'Single selection dropdown' },
@@ -84,6 +85,7 @@ const fieldTypes = {
     { id: 'divider', name: 'Divider', description: 'Visual separator between fields' },
     { id: 'buttonLinks', name: 'Button Links', description: 'Clickable button links' },
     { id: 'notice', name: 'Notice', description: 'Information or warning message' },
+    { id: 'modal', name: 'Modal', description: 'Dialog popup trigger' },
     { id: 'builderButton', name: 'Builder (M2A) Button Group', description: 'Button group for builder interface' },
     { id: 'superHeader', name: 'Super Header', description: 'Prominent section header' },
   ],

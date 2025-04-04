@@ -47,22 +47,16 @@ export const IconSelectField = ({
     iconNames.filter(name => name.toLowerCase().includes(searchQuery.toLowerCase())) : 
     iconNames;
 
-  // Get the selected icon component
-  const getIconComponent = (iconName: string) => {
+  // Render icon component safely
+  const renderIcon = (iconName: string, className: string = "h-5 w-5") => {
     if (!iconName) return null;
-    const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons];
-    return IconComponent ? IconComponent : null;
-  };
-
-  const SelectedIcon = getIconComponent(value);
-
-  // Render the icon component using React.createElement with proper type safety
-  const renderIcon = (iconName: string) => {
-    const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons];
-    if (typeof IconComponent === 'function') {
-      return React.createElement(IconComponent, { className: "h-5 w-5" });
+    const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons] as React.FC<LucideProps>;
+    
+    if (typeof IconComponent !== 'function') {
+      return null;
     }
-    return null;
+    
+    return <IconComponent className={className} />;
   };
 
   return (
@@ -83,7 +77,7 @@ export const IconSelectField = ({
             id={id}
           >
             <div className="flex items-center gap-2">
-              {SelectedIcon && React.createElement(SelectedIcon, { className: "h-4 w-4" })}
+              {value ? renderIcon(value, "h-4 w-4") : null}
               <span>{value || "Select an icon..."}</span>
             </div>
             <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

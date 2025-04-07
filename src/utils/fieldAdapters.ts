@@ -13,6 +13,7 @@ export function adaptCollectionFormData(values: any): any {
       type: field.type,
       required: field.required || false,
       settings: settings,
+      appearance: field.appearance || {}
     };
   });
 
@@ -80,8 +81,20 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
     // Extract ui_options from either direct property or from settings
     const ui_options = field.ui_options || (field.settings?.ui_options) || {};
 
-    // Extract appearance settings from field or settings
-    const appearance = field.appearance || (field.settings?.appearance) || {};
+    // Extract appearance settings properly
+    // First check if appearance is directly on the field
+    let appearance = field.appearance || {};
+    
+    // If not found directly, try to find it in settings
+    if (Object.keys(appearance).length === 0 && field.settings?.appearance) {
+      appearance = field.settings.appearance;
+    }
+    
+    // Ensure we have a valid uiVariant
+    if (!appearance.uiVariant) {
+      appearance.uiVariant = 'standard';
+    }
+    
     console.log(`Extracted appearance settings for field ${field.name}:`, JSON.stringify(appearance, null, 2));
 
     // Ensure uiVariant is properly extracted

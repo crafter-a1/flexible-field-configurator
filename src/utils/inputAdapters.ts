@@ -1,3 +1,4 @@
+
 /**
  * Validates that a UI variant is one of the allowed types
  * @param variant The variant to validate
@@ -7,7 +8,9 @@ export const validateUIVariant = (variant: any): "standard" | "material" | "pill
   const validVariants = ["standard", "material", "pill", "borderless", "underlined"];
   
   if (typeof variant === 'string' && validVariants.includes(variant.toLowerCase())) {
-    return variant.toLowerCase() as "standard" | "material" | "pill" | "borderless" | "underlined";
+    const normalizedVariant = variant.toLowerCase() as "standard" | "material" | "pill" | "borderless" | "underlined";
+    console.log(`Validated UI variant: ${normalizedVariant}`);
+    return normalizedVariant;
   }
   
   console.warn(`Invalid UI variant '${variant}' provided, defaulting to 'standard'`);

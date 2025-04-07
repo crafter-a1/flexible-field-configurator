@@ -1,4 +1,8 @@
 
+export const adaptInputChangeEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
+  return event.target.value;
+};
+
 /**
  * Validates that a UI variant is one of the allowed types
  * @param variant The variant to validate
@@ -16,6 +20,3 @@ export const validateUIVariant = (variant: any): "standard" | "material" | "pill
   console.warn(`Invalid UI variant '${variant}' provided, defaulting to 'standard'`);
   return "standard";
 }
-
-// Add any other functions needed here, but don't remove the existing function
-

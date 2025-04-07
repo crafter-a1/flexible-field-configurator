@@ -2,7 +2,8 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { BlockEditorField } from './BlockEditorField';
+import { BlockEditorField, BlockEditorFieldProps } from './BlockEditorField';
+import { validateUIVariant } from '@/utils/inputAdapters';
 
 interface WysiwygEditorFieldProps {
   id: string;
@@ -36,16 +37,17 @@ export function WysiwygEditorField({
   errorMessage,
   invalid
 }: WysiwygEditorFieldProps) {
+  // Validate UI variant
+  const validUIVariant = validateUIVariant(uiVariant);
+
   // Add UI variant class
   const fieldClassName = cn(
     'space-y-2',
     className,
-    `ui-variant-${uiVariant}`,
+    `ui-variant-${validUIVariant}`,
     invalid && 'has-error'
   );
 
-  // We need to spread only the props that BlockEditorField accepts
-  // Removing uiVariant and colors from what we pass to BlockEditorField
   return (
     <div className={fieldClassName}>
       <BlockEditorField
@@ -58,7 +60,6 @@ export function WysiwygEditorField({
         helpText={invalid && errorMessage ? errorMessage : helpText}
         minHeight={minHeight}
         className={className}
-        invalid={invalid}
       />
     </div>
   );

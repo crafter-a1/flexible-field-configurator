@@ -44,6 +44,8 @@ export function WysiwygEditorField({
     invalid && 'has-error'
   );
 
+  // We need to spread only the props that BlockEditorField accepts
+  // Removing uiVariant and colors from what we pass to BlockEditorField
   return (
     <div className={fieldClassName}>
       <BlockEditorField
@@ -56,8 +58,6 @@ export function WysiwygEditorField({
         helpText={invalid && errorMessage ? errorMessage : helpText}
         minHeight={minHeight}
         className={className}
-        uiVariant={uiVariant}
-        colors={colors}
         invalid={invalid}
       />
     </div>

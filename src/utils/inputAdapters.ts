@@ -16,3 +16,6 @@ export const validateUIVariant = (variant: any): "standard" | "material" | "pill
   console.warn(`Invalid UI variant '${variant}' provided, defaulting to 'standard'`);
   return "standard";
 }
+
+// Add any other functions needed here, but don't remove the existing function
+

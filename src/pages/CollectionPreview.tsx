@@ -28,7 +28,6 @@ export default function CollectionPreview() {
       try {
         // Simulate fetching fields from API
         // In a real app, this would be an API call to get fields with their configurations
-        // For now, we'll use localStorage to simulate getting saved field configurations
         const storedFields = localStorage.getItem(`collection_${collectionId}_fields`);
         
         if (storedFields) {
@@ -39,6 +38,11 @@ export default function CollectionPreview() {
             // Process fields to ensure consistent structure
             const adaptedFields = adaptFieldsForPreview(parsedFields);
             console.log("Adapted fields for preview:", adaptedFields);
+            
+            // Log UI variants for debugging
+            adaptedFields.forEach(field => {
+              console.log(`Preview: Field ${field.name} appearance settings:`, JSON.stringify(field.appearance || {}, null, 2));
+            });
             
             setFields(adaptedFields);
           } catch (parseError) {

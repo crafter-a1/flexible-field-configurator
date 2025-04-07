@@ -39,6 +39,7 @@ export function WysiwygEditorField({
 }: WysiwygEditorFieldProps) {
   // Validate UI variant
   const validUIVariant = validateUIVariant(uiVariant);
+  console.log(`WYSIWYG Editor: Using UI variant ${validUIVariant} for field ${id}`);
 
   // Add UI variant class
   const fieldClassName = cn(
@@ -49,7 +50,7 @@ export function WysiwygEditorField({
   );
 
   return (
-    <div className={fieldClassName}>
+    <div className={fieldClassName} data-ui-variant={validUIVariant}>
       <BlockEditorField
         id={id}
         label={label}

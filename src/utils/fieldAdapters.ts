@@ -88,35 +88,34 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
   return fields.map(field => {
     const apiId = field.api_id || field.apiId || field.name?.toLowerCase().replace(/\s+/g, '_');
 
-    // Get UI options consistently
-    const ui_options = field.ui_options || (field.settings?.ui_options) || {};
-
-    // Extract appearance settings ONLY from settings.appearance
+    // Consistently extract appearance settings from settings.appearance
     const appearance = field.settings?.appearance || {};
     
+    // Extract additional UI options
+    const ui_options = field.settings?.ui_options || {};
+    
+    // Extract validation settings
+    const validation = field.settings?.validation || {};
+    
+    // Extract advanced settings
+    const advanced = field.settings?.advanced || {};
+
     // Ensure we have a valid uiVariant
     if (!appearance.uiVariant) {
       appearance.uiVariant = 'standard';
     }
     
     console.log(`Extracted appearance settings for field ${field.name}:`, JSON.stringify(appearance, null, 2));
-    console.log(`UI Variant for field ${field.name}:`, appearance.uiVariant || 'not set');
+    console.log(`UI Variant for field ${field.name}:`, appearance.uiVariant);
 
     // Get placeholder with consistent fallback
     let placeholder = ui_options.placeholder || field.placeholder || `Enter ${field.name}...`;
     console.log(`Using placeholder for ${field.name}:`, placeholder);
 
-    // Extract validation settings consistently
-    const validation = field.settings?.validation || {};
-
-    // Extract advanced settings consistently
-    const advanced = field.settings?.advanced || {};
-
     // Debug logging
     console.log('Field data processed for preview:', {
       fieldName: field.name,
       fieldType: field.type,
-      ui_options,
       settings: field.settings,
       appearance,
       placeholder
@@ -128,7 +127,7 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
       type: field.type,
       apiId: apiId,
       required: field.required || false,
-      helpText: field.helpText || field.description || ui_options.help_text,
+      helpText: field.settings?.helpText || field.description || ui_options.help_text,
       placeholder: placeholder,
       ui_options: ui_options,
       validation: validation,

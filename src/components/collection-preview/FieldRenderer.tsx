@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InputTextField } from "../fields/inputs/InputTextField";
 import { PasswordInputField } from "../fields/inputs/PasswordInputField";
@@ -42,58 +41,41 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
   const fieldId = field.id || field.apiId || field.name;
   const fieldName = field.name || "Field";
   const value = formData?.[fieldId] !== undefined ? formData[fieldId] : "";
-  // Get placeholder from field data
+  
   const placeholder = field.placeholder || field.ui_options?.placeholder || `Enter ${fieldName}...`;
-  console.log(`Placeholder for field ${fieldName}:`, placeholder);
   const helpText = field.helpText || field.ui_options?.help_text;
   const required = field.required || false;
   const hasError = errors && errors[fieldId]?.length > 0;
   const errorMessage = errors && errors[fieldId]?.join(", ");
 
-  // Extract appearance settings
   const appearance = field.appearance || {};
-  console.log(`Appearance settings for field ${fieldName}:`, JSON.stringify(appearance, null, 2));
+  console.log(`Rendering field ${fieldName} with appearance:`, JSON.stringify(appearance, null, 2));
 
-  // Log UI variant specifically and ensure it's valid
-  let uiVariant = 'standard';
-  
-  if (appearance.uiVariant) {
-    uiVariant = validateUIVariant(appearance.uiVariant);
-    console.log(`UI Variant for field ${fieldName} in FieldRenderer:`, uiVariant);
-  } else {
-    console.log(`No UI Variant found for field ${fieldName} in FieldRenderer, using default`);
-
-    // If no UI variant is found, check if it's in the field settings
-    if (field.settings?.appearance?.uiVariant) {
-      uiVariant = validateUIVariant(field.settings.appearance.uiVariant);
-      console.log(`Found UI Variant in settings for field ${fieldName}:`, uiVariant);
-    }
-  }
+  const uiVariant = validateUIVariant(appearance.uiVariant);
+  console.log(`UI Variant for field ${fieldName} in FieldRenderer:`, uiVariant);
   
   const {
-    textAlign,
-    labelPosition,
-    labelWidth,
-    floatLabel,
-    filled,
-    showBorder,
-    showBackground,
-    roundedCorners,
-    fieldSize,
-    labelSize,
-    customClass,
+    textAlign = "left",
+    labelPosition = "top",
+    labelWidth = 30,
+    floatLabel = false,
+    filled = false,
+    showBorder = true,
+    showBackground = false,
+    roundedCorners = "medium",
+    fieldSize = "medium",
+    labelSize = "medium",
+    customClass = "",
     colors = {}
   } = appearance;
 
-  // Extract advanced settings
   const advanced = field.advanced || {};
 
-  // Create a className that includes any error styling
   const fieldClassName = cn(
-    customClass || "",
+    customClass,
     "w-full",
     hasError && "has-error",
-    `ui-variant-${uiVariant}` // Add UI variant class
+    `ui-variant-${uiVariant}`
   );
 
   switch (field.type) {
@@ -108,15 +90,15 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
           required={required}
           helpText={hasError ? errorMessage : helpText}
           keyFilter={advanced.keyFilter || "none"}
-          floatLabel={floatLabel || false}
-          filled={filled || false}
-          textAlign={textAlign || "left"}
-          labelPosition={labelPosition || "top"}
-          labelWidth={labelWidth || 30}
-          showBorder={showBorder !== false}
-          roundedCorners={roundedCorners || "medium"}
-          fieldSize={fieldSize || "medium"}
-          labelSize={labelSize || "medium"}
+          floatLabel={floatLabel}
+          filled={filled}
+          textAlign={textAlign}
+          labelPosition={labelPosition}
+          labelWidth={labelWidth}
+          showBorder={showBorder}
+          roundedCorners={roundedCorners}
+          fieldSize={fieldSize}
+          labelSize={labelSize}
           customClass={fieldClassName}
           colors={colors}
           uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
@@ -137,19 +119,19 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
           placeholder={placeholder}
           required={required}
           helpText={hasError ? errorMessage : helpText}
-          floatLabel={floatLabel || false}
-          filled={filled || false}
+          floatLabel={floatLabel}
+          filled={filled}
           showButtons={advanced.showButtons || false}
           buttonLayout={advanced.buttonLayout || "horizontal"}
           prefix={advanced.prefix || ""}
           suffix={advanced.suffix || ""}
-          textAlign={textAlign || "left"}
-          labelPosition={labelPosition || "top"}
-          labelWidth={labelWidth || 30}
-          showBorder={showBorder !== false}
-          roundedCorners={roundedCorners || "medium"}
-          fieldSize={fieldSize || "medium"}
-          labelSize={labelSize || "medium"}
+          textAlign={textAlign}
+          labelPosition={labelPosition}
+          labelWidth={labelWidth}
+          showBorder={showBorder}
+          roundedCorners={roundedCorners}
+          fieldSize={fieldSize}
+          labelSize={labelSize}
           customClass={fieldClassName}
           colors={colors}
           uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
@@ -167,15 +149,15 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
           placeholder={placeholder}
           required={required}
           helpText={hasError ? errorMessage : helpText}
-          floatLabel={floatLabel || false}
-          filled={filled || false}
-          textAlign={textAlign || "left"}
-          labelPosition={labelPosition || "top"}
-          labelWidth={labelWidth || 30}
-          showBorder={showBorder !== false}
-          roundedCorners={roundedCorners || "medium"}
-          fieldSize={fieldSize || "medium"}
-          labelSize={labelSize || "medium"}
+          floatLabel={floatLabel}
+          filled={filled}
+          textAlign={textAlign}
+          labelPosition={labelPosition}
+          labelWidth={labelWidth}
+          showBorder={showBorder}
+          roundedCorners={roundedCorners}
+          fieldSize={fieldSize}
+          labelSize={labelSize}
           customClass={fieldClassName}
           colors={colors}
           uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
@@ -231,6 +213,10 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
           helpText={hasError ? errorMessage : helpText}
           minHeight={field.minHeight || "200px"}
           className={fieldClassName}
+          uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
+          colors={colors}
+          errorMessage={hasError ? errorMessage : undefined}
+          invalid={hasError}
         />
       );
 

@@ -1,3 +1,4 @@
+
 export function adaptCollectionFormData(values: any): any {
   const adaptedFields = values.fields.map((field: any) => {
     let settings = field.settings || {};
@@ -7,13 +8,22 @@ export function adaptCollectionFormData(values: any): any {
       settings = adaptNumberFieldSettings(field.settings);
     }
 
+    // Move any appearance settings at the root level into settings.appearance
+    if (field.appearance) {
+      settings.appearance = {
+        ...(settings.appearance || {}),
+        ...field.appearance
+      };
+      // Remove redundant appearance property at root level
+      delete field.appearance;
+    }
+
     return {
       name: field.name,
       api_id: field.apiId,
       type: field.type,
       required: field.required || false,
-      settings: settings,
-      appearance: field.appearance || {}
+      settings: settings
     };
   });
 
@@ -78,17 +88,11 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
   return fields.map(field => {
     const apiId = field.api_id || field.apiId || field.name?.toLowerCase().replace(/\s+/g, '_');
 
-    // Extract ui_options from either direct property or from settings
+    // Get UI options consistently
     const ui_options = field.ui_options || (field.settings?.ui_options) || {};
 
-    // Extract appearance settings properly
-    // First check if appearance is directly on the field
-    let appearance = field.appearance || {};
-    
-    // If not found directly, try to find it in settings
-    if (Object.keys(appearance).length === 0 && field.settings?.appearance) {
-      appearance = field.settings.appearance;
-    }
+    // Extract appearance settings ONLY from settings.appearance
+    const appearance = field.settings?.appearance || {};
     
     // Ensure we have a valid uiVariant
     if (!appearance.uiVariant) {
@@ -96,29 +100,20 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
     }
     
     console.log(`Extracted appearance settings for field ${field.name}:`, JSON.stringify(appearance, null, 2));
+    console.log(`UI Variant for field ${field.name}:`, appearance.uiVariant || 'not set');
 
-    // Ensure uiVariant is properly extracted
-    if (appearance.uiVariant) {
-      console.log(`UI Variant for field ${field.name}:`, appearance.uiVariant);
-    } else {
-      console.log(`No UI Variant found for field ${field.name}`);
-    }
+    // Get placeholder with consistent fallback
+    let placeholder = ui_options.placeholder || field.placeholder || `Enter ${field.name}...`;
+    console.log(`Using placeholder for ${field.name}:`, placeholder);
 
-    // Get placeholder with detailed fallback logging
-    let placeholder = null;
-    if (ui_options.placeholder) {
-      console.log(`Found placeholder in ui_options for ${field.name}:`, ui_options.placeholder);
-      placeholder = ui_options.placeholder;
-    } else if (field.placeholder) {
-      console.log(`Found placeholder in field.placeholder for ${field.name}:`, field.placeholder);
-      placeholder = field.placeholder;
-    } else {
-      placeholder = `Enter ${field.name}...`;
-      console.log(`Using default placeholder for ${field.name}:`, placeholder);
-    }
+    // Extract validation settings consistently
+    const validation = field.settings?.validation || {};
+
+    // Extract advanced settings consistently
+    const advanced = field.settings?.advanced || {};
 
     // Debug logging
-    console.log('Field data for preview:', {
+    console.log('Field data processed for preview:', {
       fieldName: field.name,
       fieldType: field.type,
       ui_options,
@@ -133,22 +128,22 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
       type: field.type,
       apiId: apiId,
       required: field.required || false,
-      helpText: field.helpText || field.description,
+      helpText: field.helpText || field.description || ui_options.help_text,
       placeholder: placeholder,
       ui_options: ui_options,
-      validation: field.validation || {},
+      validation: validation,
       appearance: appearance,
-      advanced: field.advanced || {},
+      advanced: advanced,
       options: field.options || [],
-      min: field.min !== undefined ? field.min : (field.validation?.min !== undefined ? field.validation.min : undefined),
-      max: field.max !== undefined ? field.max : (field.validation?.max !== undefined ? field.validation.max : undefined),
-      maxTags: field.maxTags || 10,
-      mask: field.mask || field.advanced?.mask,
-      keyFilter: field.keyFilter || field.validation?.keyFilter,
-      length: field.length || 6,  // For OTP input
-      rows: field.rows || 10,     // For textarea/markdown
-      prefix: field.prefix || field.advanced?.prefix,
-      suffix: field.suffix || field.advanced?.suffix,
+      min: validation?.min !== undefined ? validation.min : (field.min !== undefined ? field.min : undefined),
+      max: validation?.max !== undefined ? validation.max : (field.max !== undefined ? field.max : undefined),
+      maxTags: advanced?.maxTags || 10,
+      mask: advanced?.mask || field.mask,
+      keyFilter: validation?.keyFilter || field.keyFilter,
+      length: advanced?.length || 6,  // For OTP input
+      rows: advanced?.rows || 10,     // For textarea/markdown
+      prefix: advanced?.prefix || field.prefix,
+      suffix: advanced?.suffix || field.suffix,
     };
   });
 }

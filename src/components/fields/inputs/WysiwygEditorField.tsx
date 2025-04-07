@@ -2,7 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { BlockEditorField, BlockEditorFieldProps } from './BlockEditorField';
+import { BlockEditorField } from './BlockEditorField';
 import { validateUIVariant } from '@/utils/inputAdapters';
 
 interface WysiwygEditorFieldProps {

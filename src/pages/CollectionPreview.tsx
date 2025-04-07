@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { CollectionPreviewForm } from '@/components/collection-preview/CollectionPreviewForm';
 import { toast } from '@/hooks/use-toast';
+import { adaptFieldsForPreview } from '@/utils/fieldAdapters';
 
 export default function CollectionPreview() {
   const { collectionId } = useParams<{ collectionId: string }>();
@@ -31,9 +32,19 @@ export default function CollectionPreview() {
         const storedFields = localStorage.getItem(`collection_${collectionId}_fields`);
         
         if (storedFields) {
-          const parsedFields = JSON.parse(storedFields);
-          console.log("Loaded fields from storage:", parsedFields);
-          setFields(parsedFields);
+          try {
+            const parsedFields = JSON.parse(storedFields);
+            console.log("Loaded raw fields from storage:", parsedFields);
+            
+            // Process fields to ensure consistent structure
+            const adaptedFields = adaptFieldsForPreview(parsedFields);
+            console.log("Adapted fields for preview:", adaptedFields);
+            
+            setFields(adaptedFields);
+          } catch (parseError) {
+            console.error("Error parsing stored fields:", parseError);
+            setError(parseError instanceof Error ? parseError : new Error('Failed to parse stored fields'));
+          }
         } else {
           console.log("No stored fields found for collection:", collectionId);
           // If no stored fields, we could fetch from a default source

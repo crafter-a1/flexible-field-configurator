@@ -16,6 +16,25 @@ export interface ValidationSettings {
   [key: string]: any;
 }
 
+export interface AppearanceSettings {
+  uiVariant?: "standard" | "material" | "pill" | "borderless" | "underlined";
+  textAlign?: string;
+  labelPosition?: string;
+  labelWidth?: number;
+  floatLabel?: boolean;
+  filled?: boolean;
+  showBorder?: boolean;
+  showBackground?: boolean;
+  roundedCorners?: string;
+  fieldSize?: string;
+  labelSize?: string;
+  customClass?: string;
+  customCss?: string;
+  colors?: Record<string, string>;
+  isDarkMode?: boolean;
+  [key: string]: any;
+}
+
 export interface Collection {
   id: string;
   title: string;
@@ -48,14 +67,16 @@ export interface CollectionField {
   type: string;
   description?: string;
   required: boolean;
-  settings?: Record<string, any>;
+  settings?: {
+    validation?: ValidationSettings;
+    appearance?: AppearanceSettings;
+    advanced?: Record<string, any>;
+    ui_options?: Record<string, any>;
+    helpText?: string;
+    [key: string]: any;
+  };
   sort_order?: number;
   collection_id?: string;
-  validation?: ValidationSettings;
-  appearance?: Record<string, any>;
-  advanced?: Record<string, any>;
-  helpText?: string;
-  ui_options?: Record<string, any>;
 }
 
 const mapSupabaseCollection = (collection: Database['public']['Tables']['collections']['Row']): Collection => {
@@ -84,24 +105,12 @@ const mapSupabaseField = (field: Database['public']['Tables']['fields']['Row']):
     fieldId: field.id,
     fieldName: field.name,
     fieldType: field.type,
-    settings,
-    appearance: settings.appearance || {},
-    ui_options: settings.ui_options || {}
+    settings
   });
 
   // Log appearance settings specifically
   if (settings.appearance) {
     console.log(`Appearance settings for field ${field.name}:`, JSON.stringify(settings.appearance, null, 2));
-  }
-
-  // Extract appearance settings with special handling for uiVariant
-  const appearanceSettings = settings.appearance || {};
-
-  // Ensure uiVariant is properly extracted
-  if (appearanceSettings.uiVariant) {
-    console.log(`UI Variant extracted for field ${field.name}:`, appearanceSettings.uiVariant);
-  } else {
-    console.log(`No UI Variant found for field ${field.name} in database`);
   }
 
   return {
@@ -114,11 +123,6 @@ const mapSupabaseField = (field: Database['public']['Tables']['fields']['Row']):
     settings: settings,
     sort_order: field.sort_order || 0,
     collection_id: field.collection_id || undefined,
-    validation: settings.validation || {},
-    appearance: appearanceSettings,
-    advanced: settings.advanced || {},
-    helpText: settings.helpText || '',
-    ui_options: settings.ui_options || {}
   };
 };
 
@@ -158,39 +162,40 @@ export const CollectionService = {
         ? (existingFields[0].sort_order || 0) + 1
         : 0;
 
-      const { validation, appearance, advanced, apiId, ui_options, helpText, ...restData } = fieldData;
+      const { apiId, ...restData } = fieldData;
 
-      // Prepare the settings object
-      const settings: Record<string, any> = {
-        ...(fieldData.settings || {}),
-      };
+      // Ensure we have a settings object
+      const settings: Record<string, any> = { ...(fieldData.settings || {}) };
 
-      // Add validation, appearance, and advanced settings to the settings object
-      if (validation) {
-        settings.validation = validation;
+      // Move any properties that should be inside settings to the proper location
+      if (fieldData.validation) {
+        settings.validation = fieldData.validation;
+        delete (restData as any).validation;
       }
 
-      if (appearance) {
-        settings.appearance = appearance;
+      if (fieldData.appearance) {
+        settings.appearance = fieldData.appearance;
+        delete (restData as any).appearance;
       }
 
-      if (advanced) {
-        settings.advanced = advanced;
+      if (fieldData.advanced) {
+        settings.advanced = fieldData.advanced;
+        delete (restData as any).advanced;
       }
 
-      if (helpText) {
-        settings.helpText = helpText;
+      if (fieldData.helpText) {
+        settings.helpText = fieldData.helpText;
+        delete (restData as any).helpText;
       }
 
-      if (ui_options) {
-        settings.ui_options = ui_options;
-      } else if (fieldData.ui_options) {
+      if (fieldData.ui_options) {
         settings.ui_options = fieldData.ui_options;
+        delete (restData as any).ui_options;
       }
 
       const field = {
         name: fieldData.name || 'New Field',
-        api_id: apiId || fieldData.apiId || fieldData.name?.toLowerCase().replace(/\s+/g, '_') || 'new_field',
+        api_id: apiId || fieldData.name?.toLowerCase().replace(/\s+/g, '_') || 'new_field',
         type: fieldData.type || 'text',
         collection_id: collectionId,
         description: fieldData.description || null,
@@ -228,6 +233,7 @@ export const CollectionService = {
       if (fieldData.required !== undefined) updateData.required = fieldData.required;
       if (fieldData.sort_order !== undefined) updateData.sort_order = fieldData.sort_order;
 
+      // Get current field data to merge with updates
       const { data: currentField } = await supabase
         .from('fields')
         .select('settings')
@@ -237,53 +243,63 @@ export const CollectionService = {
       const currentSettings = (currentField?.settings as Record<string, any>) || {};
       const settingsToUpdate: Record<string, any> = { ...currentSettings };
 
+      console.log('Current settings before update:', JSON.stringify(currentSettings, null, 2));
+
       // Update UI options if provided
-      if (fieldData.ui_options) {
+      if (fieldData.settings?.ui_options) {
         settingsToUpdate.ui_options = {
           ...(currentSettings.ui_options || {}),
-          ...fieldData.ui_options
+          ...fieldData.settings.ui_options
         };
       }
 
       // Update help text if provided
-      if (fieldData.helpText !== undefined) {
-        settingsToUpdate.helpText = fieldData.helpText;
+      if (fieldData.settings?.helpText !== undefined) {
+        settingsToUpdate.helpText = fieldData.settings.helpText;
       }
 
       // Update validation settings if provided
-      if (fieldData.validation) {
+      if (fieldData.settings?.validation) {
         settingsToUpdate.validation = {
           ...(currentSettings.validation || {}),
-          ...fieldData.validation
+          ...fieldData.settings.validation
         };
       }
 
-      // Update appearance settings if provided
-      if (fieldData.appearance) {
-        console.log('Updating appearance settings in database:', JSON.stringify(fieldData.appearance, null, 2));
+      // Update appearance settings if provided - ensure they're stored in settings.appearance
+      if (fieldData.settings?.appearance || fieldData.appearance) {
+        const newAppearance = fieldData.settings?.appearance || fieldData.appearance || {};
+        
+        console.log('Updating appearance settings in database:', JSON.stringify(newAppearance, null, 2));
 
-        // Ensure uiVariant is included in the appearance settings
-        const appearanceSettings = {
+        // Ensure appearance settings are properly merged
+        settingsToUpdate.appearance = {
           ...(currentSettings.appearance || {}),
-          ...fieldData.appearance,
-          uiVariant: fieldData.appearance.uiVariant || 'standard'
+          ...newAppearance
         };
 
-        settingsToUpdate.appearance = appearanceSettings;
+        // Ensure uiVariant is always present
+        if (!settingsToUpdate.appearance.uiVariant) {
+          settingsToUpdate.appearance.uiVariant = 'standard';
+        }
 
         console.log('Final appearance settings to save:', JSON.stringify(settingsToUpdate.appearance, null, 2));
         console.log('UI Variant being saved to database:', settingsToUpdate.appearance.uiVariant);
       }
 
       // Update advanced settings if provided
-      if (fieldData.advanced) {
+      if (fieldData.settings?.advanced || fieldData.advanced) {
+        const newAdvanced = fieldData.settings?.advanced || fieldData.advanced || {};
+        
         settingsToUpdate.advanced = {
           ...(currentSettings.advanced || {}),
-          ...fieldData.advanced
+          ...newAdvanced
         };
       }
 
       updateData.settings = settingsToUpdate;
+      
+      console.log('Final settings structure being saved:', JSON.stringify(updateData.settings, null, 2));
 
       const { data, error } = await supabase
         .from('fields')

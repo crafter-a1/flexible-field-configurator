@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CollectionGrid } from '@/components/collections/CollectionGrid';
@@ -36,7 +35,9 @@ export default function Collections() {
   
   const { data: collections = [], isLoading, error } = useQuery({
     queryKey: ['collections'],
-    queryFn: fetchCollections
+    queryFn: fetchCollections,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
   });
   
   const createCollectionMutation = useMutation({
@@ -168,11 +169,7 @@ export default function Collections() {
           </div>
         </div>
         
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Loading collections...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="text-center py-12">
             <p className="text-red-500">Error loading collections. Please try again.</p>
           </div>
@@ -183,6 +180,7 @@ export default function Collections() {
               viewMode={viewMode}
               sortOption={sortOption}
               onCreateNew={() => setIsDialogOpen(true)}
+              isLoading={isLoading}
             />
           </div>
         )}

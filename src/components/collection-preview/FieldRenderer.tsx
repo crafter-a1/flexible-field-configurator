@@ -1,421 +1,558 @@
-import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DateCalendarField } from '@/components/fields/inputs/DateCalendarField';
-import { InputTextField } from '@/components/fields/inputs/InputTextField';
-import { NumberInputField } from '@/components/fields/inputs/NumberInputField';
-import { SelectButtonField } from '@/components/form-fields/SelectButtonField';
-import { PasswordInputField } from '@/components/fields/inputs/PasswordInputField';
-import { MaskInputField } from '@/components/fields/inputs/MaskInputField';
-import { OTPInputField } from '@/components/fields/inputs/OTPInputField';
-import { AutocompleteInputField } from '@/components/fields/inputs/AutocompleteInputField';
-import { BlockEditorField } from '@/components/fields/inputs/BlockEditorField';
-import { WysiwygEditorField } from '@/components/fields/inputs/WysiwygEditorField';
-import { MarkdownEditorField } from '@/components/fields/inputs/MarkdownEditorField';
-import { TagsInputField } from '@/components/fields/inputs/TagsInputField';
-import { SlugInputField } from '@/components/fields/inputs/SlugInputField';
-import { ColorPickerField } from '@/components/fields/inputs/ColorPickerField';
-import { RadioCardsField } from '@/components/fields/inputs/RadioCardsField';
-import { CheckboxCardsField } from '@/components/fields/inputs/CheckboxCardsField';
-import { FileInputField } from '@/components/fields/inputs/FileInputField';
-import { MultiFileInputField } from '@/components/fields/inputs/MultiFileInputField';
-import { JSONEditorField } from '@/components/fields/inputs/JSONEditorField';
-import { RatingField } from '@/components/fields/inputs/RatingField';
-import { SliderField } from '@/components/fields/inputs/SliderField';
-import { HashInputField } from '@/components/fields/inputs/HashInputField';
-import { IconSelectField } from '@/components/fields/inputs/IconSelectField';
-import { ListboxField } from '@/components/fields/inputs/ListboxField';
-import { TreeViewField } from '@/components/fields/inputs/TreeViewField';
-import { InlineRepeaterField } from '@/components/fields/inputs/InlineRepeaterField';
-import { DividerField } from '@/components/fields/inputs/DividerField';
-import { SuperHeaderField } from '@/components/fields/inputs/SuperHeaderField';
-import { DetailGroupField } from '@/components/fields/inputs/DetailGroupField';
-import { RawGroupField } from '@/components/fields/inputs/RawGroupField';
-import { CollectionItemField } from '@/components/fields/inputs/CollectionItemField';
 
-interface FieldRendererProps {
+import React from "react";
+import { InputTextField } from "../fields/inputs/InputTextField";
+import { PasswordInputField } from "../fields/inputs/PasswordInputField";
+import { NumberInputField } from "../fields/inputs/NumberInputField";
+import { Textarea } from "@/components/ui/textarea";
+import MarkdownEditorField from "../fields/inputs/MarkdownEditorField";
+import WysiwygEditorField from "../fields/inputs/WysiwygEditorField";
+import BlockEditorField from "../fields/inputs/BlockEditorField";
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import ColorPickerField from "../fields/inputs/ColorPickerField";
+import SlugInputField from "../fields/inputs/SlugInputField";
+import TagsInputField from "../fields/inputs/TagsInputField";
+import MaskInputField from "../fields/inputs/MaskInputField";
+import OTPInputField from "../fields/inputs/OTPInputField";
+import AutocompleteInputField from "../fields/inputs/AutocompleteInputField";
+import { cn } from "@/lib/utils";
+import { validateUIVariant } from "@/utils/inputAdapters";
+
+export interface FieldRendererProps {
   field: any;
   formData: Record<string, any>;
-  titleField: string | null;
+  titleField?: string | null;
   onInputChange: (fieldId: string, value: any) => void;
+  errors?: Record<string, string[]>;
 }
 
-export function FieldRenderer({ field, formData, titleField, onInputChange }: FieldRendererProps) {
-  const commonProps = {
-    id: field.api_id,
-    label: field.name,
-    value: formData[field.api_id],
-    onChange: (value: any) => onInputChange(field.api_id, value),
-    required: field.required || false,
-    helpText: field.helpText || null,
-    className: "mb-5",
-  };
+export const FieldRenderer = ({ field, formData, titleField, onInputChange, errors }: FieldRendererProps) => {
+  const fieldId = field.id || field.apiId || field.name;
+  const fieldName = field.name || "Field";
+  const value = formData?.[fieldId] !== undefined ? formData[fieldId] : "";
+  // Get placeholder from field data
+  const placeholder = field.placeholder || field.ui_options?.placeholder || `Enter ${fieldName}...`;
+  console.log(`Placeholder for field ${fieldName}:`, placeholder);
+  const helpText = field.helpText || field.ui_options?.help_text;
+  const required = field.required || false;
+  const hasError = errors && errors[fieldId]?.length > 0;
+  const errorMessage = errors && errors[fieldId]?.join(", ");
+
+  // Extract appearance settings
+  const appearance = field.appearance || {};
+  console.log(`Appearance settings for field ${fieldName}:`, JSON.stringify(appearance, null, 2));
+
+  // Log UI variant specifically and ensure it's valid
+  let uiVariant = 'standard';
+  
+  if (appearance.uiVariant) {
+    uiVariant = validateUIVariant(appearance.uiVariant);
+    console.log(`UI Variant for field ${fieldName} in FieldRenderer:`, uiVariant);
+  } else {
+    console.log(`No UI Variant found for field ${fieldName} in FieldRenderer, using default`);
+
+    // If no UI variant is found, check if it's in the field settings
+    if (field.settings?.appearance?.uiVariant) {
+      uiVariant = validateUIVariant(field.settings.appearance.uiVariant);
+      console.log(`Found UI Variant in settings for field ${fieldName}:`, uiVariant);
+    }
+  }
+  
+  const {
+    textAlign,
+    labelPosition,
+    labelWidth,
+    floatLabel,
+    filled,
+    showBorder,
+    showBackground,
+    roundedCorners,
+    fieldSize,
+    labelSize,
+    customClass,
+    colors = {}
+  } = appearance;
+
+  // Extract advanced settings
+  const advanced = field.advanced || {};
+
+  // Create a className that includes any error styling
+  const fieldClassName = cn(
+    customClass || "",
+    "w-full",
+    hasError && "has-error",
+    `ui-variant-${uiVariant}` // Add UI variant class
+  );
 
   switch (field.type) {
-    case 'text':
+    case "text":
       return (
         <InputTextField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter ${field.name}`}
-          keyFilter={field.keyFilter || "none"}
-          floatLabel={field.appearance?.floatLabel}
-          filled={field.appearance?.filled}
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          keyFilter={advanced.keyFilter || "none"}
+          floatLabel={floatLabel || false}
+          filled={filled || false}
+          textAlign={textAlign || "left"}
+          labelPosition={labelPosition || "top"}
+          labelWidth={labelWidth || 30}
+          showBorder={showBorder !== false}
+          roundedCorners={roundedCorners || "medium"}
+          fieldSize={fieldSize || "medium"}
+          labelSize={labelSize || "medium"}
+          customClass={fieldClassName}
+          colors={colors}
+          uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
+          errorMessage={hasError ? errorMessage : undefined}
+          invalid={hasError}
         />
       );
-    case 'textarea':
-      return (
-        <div className="mb-5">
-          <Label htmlFor={field.api_id}>{field.name}{field.required && <span className="text-red-500 ml-1">*</span>}</Label>
-          <Textarea
-            id={field.api_id}
-            value={formData[field.api_id] || ''}
-            onChange={(e) => onInputChange(field.api_id, e.target.value)}
-            placeholder={field.placeholder || `Enter ${field.name}`}
-            required={field.required}
-            className="mt-1"
-            rows={5}
-          />
-          {field.helpText && (
-            <p className="text-muted-foreground text-xs mt-1">{field.helpText}</p>
-          )}
-        </div>
-      );
-    case 'number':
+
+    case "number":
       return (
         <NumberInputField
-          {...commonProps}
+          id={fieldId}
+          label={fieldName}
+          value={value !== undefined && value !== "" ? value : null}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
           min={field.min}
           max={field.max}
-          placeholder={field.placeholder || `Enter a number`}
-          floatLabel={field.appearance?.floatLabel}
-          filled={field.appearance?.filled}
-          showButtons={field.advanced?.showButtons}
-          buttonLayout={field.advanced?.buttonLayout || "horizontal"}
-          prefix={field.advanced?.prefix}
-          suffix={field.advanced?.suffix}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          floatLabel={floatLabel || false}
+          filled={filled || false}
+          showButtons={advanced.showButtons || false}
+          buttonLayout={advanced.buttonLayout || "horizontal"}
+          prefix={advanced.prefix || ""}
+          suffix={advanced.suffix || ""}
+          textAlign={textAlign || "left"}
+          labelPosition={labelPosition || "top"}
+          labelWidth={labelWidth || 30}
+          showBorder={showBorder !== false}
+          roundedCorners={roundedCorners || "medium"}
+          fieldSize={fieldSize || "medium"}
+          labelSize={labelSize || "medium"}
+          customClass={fieldClassName}
+          colors={colors}
+          uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
+          invalid={hasError}
         />
       );
-    case 'boolean':
-    case 'toggle':
+
+    case "password":
       return (
-        <div key={field.id} className="flex items-center space-x-2 mb-5">
-          <Switch
-            id={field.api_id}
-            checked={formData[field.api_id] || false}
-            onCheckedChange={(checked) => onInputChange(field.api_id, checked)}
-          />
-          <Label htmlFor={field.api_id}>{field.name}{field.required && <span className="text-red-500 ml-1">*</span>}</Label>
-        </div>
+        <PasswordInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          floatLabel={floatLabel || false}
+          filled={filled || false}
+          textAlign={textAlign || "left"}
+          labelPosition={labelPosition || "top"}
+          labelWidth={labelWidth || 30}
+          showBorder={showBorder !== false}
+          roundedCorners={roundedCorners || "medium"}
+          fieldSize={fieldSize || "medium"}
+          labelSize={labelSize || "medium"}
+          customClass={fieldClassName}
+          colors={colors}
+          uiVariant={uiVariant as "standard" | "material" | "pill" | "borderless" | "underlined"}
+          errorMessage={hasError ? errorMessage : undefined}
+          invalid={hasError}
+        />
       );
-    case 'select':
+
+    case "textarea":
       return (
-        <div className="mb-5">
-          <Label htmlFor={field.api_id}>{field.name}{field.required && <span className="text-red-500 ml-1">*</span>}</Label>
-          <Select 
-            onValueChange={(value) => onInputChange(field.api_id, value)}
-            defaultValue={formData[field.api_id] || ''}
-          >
-            <SelectTrigger id={field.api_id} className="mt-1">
-              <SelectValue placeholder={`Select ${field.name}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options &&
-                field.options.map((option: any) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          {field.helpText && (
-            <p className="text-muted-foreground text-xs mt-1">{field.helpText}</p>
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <Textarea
+            id={fieldId}
+            value={value || ""}
+            onChange={(e) => onInputChange(fieldId, e.target.value)}
+            placeholder={placeholder}
+            required={required}
+            rows={field.rows || 3}
+          />
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
           )}
         </div>
       );
-    case 'selectbutton':
-      return (
-        <SelectButtonField
-          {...commonProps}
-          options={field.options}
-          value={formData[field.api_id] || ''}
-        />
-      );
-    case 'date':
-      return (
-        <DateCalendarField
-          {...commonProps}
-          value={formData[field.api_id] || null}
-          onChange={(date: Date) => {
-            onInputChange(field.api_id, date);
-          }}
-        />
-      );
-    case 'password':
-      return (
-        <PasswordInputField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter password`}
-          floatLabel={field.appearance?.floatLabel}
-          filled={field.appearance?.filled}
-        />
-      );
-    case 'mask':
-      return (
-        <MaskInputField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter value`}
-          mask={field.mask || ''}
-          floatLabel={field.appearance?.floatLabel}
-          filled={field.appearance?.filled}
-        />
-      );
-    case 'otp':
-      return (
-        <OTPInputField
-          {...commonProps}
-          length={field.length || 6}
-        />
-      );
-    case 'autocomplete':
-      return (
-        <AutocompleteInputField
-          {...commonProps}
-          placeholder={field.placeholder || `Type to search...`}
-          options={field.options || []}
-          floatLabel={field.appearance?.floatLabel}
-          filled={field.appearance?.filled}
-        />
-      );
-    case 'blockeditor':
-      return (
-        <BlockEditorField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter content...`}
-          minHeight={field.minHeight || '200px'}
-        />
-      );
-    case 'wysiwyg':
-      return (
-        <WysiwygEditorField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter content...`}
-          minHeight={field.minHeight || '200px'}
-        />
-      );
-    case 'markdown':
+
+    case "markdown":
       return (
         <MarkdownEditorField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter markdown content...`}
-          rows={field.rows || 10}
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          rows={field.rows || 3}
+          className={fieldClassName}
         />
       );
-    case 'tags':
+
+    case "wysiwyg":
       return (
-        <TagsInputField
-          {...commonProps}
-          value={formData[field.api_id] || []}
-          placeholder={field.placeholder || `Add tags...`}
-          maxTags={field.maxTags || 10}
+        <WysiwygEditorField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          minHeight={field.minHeight || "200px"}
+          className={fieldClassName}
         />
       );
-    case 'slug':
+
+    case "blockeditor":
       return (
-        <SlugInputField
-          {...commonProps}
-          placeholder={field.placeholder || `url-friendly-slug`}
-          sourceValue={titleField ? formData[titleField] : ''}
-          prefix={field.prefix || ''}
-          suffix={field.suffix || ''}
+        <BlockEditorField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          minHeight={field.minHeight || "200px"}
+          className={fieldClassName}
         />
       );
-    case 'color':
-    case 'colorpicker':
+
+    case "file":
+      return (
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md border-gray-300 bg-gray-50 mt-2">
+            <Button variant="outline" type="button" onClick={() => console.log("File upload clicked")}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload file
+            </Button>
+            <p className="mt-2 text-xs text-gray-500">Drag and drop or click to upload</p>
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "image":
+      return (
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <div className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-gray-300 bg-gray-50 mt-2">
+            <Button variant="outline" type="button" onClick={() => console.log("Image upload clicked")}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload image
+            </Button>
+            <p className="mt-2 text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "date":
+      return (
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <div className="border rounded-md p-1 mt-2">
+            <Calendar
+              mode="single"
+              selected={value ? new Date(value) : undefined}
+              onSelect={(date) => onInputChange(fieldId, date?.toISOString() || "")}
+            />
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "select":
+      return (
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <Select
+            value={value || ""}
+            onValueChange={(newValue) => onInputChange(fieldId, newValue)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options?.map((option: any) => (
+                <SelectItem key={option.value || option} value={option.value || option}>
+                  {option.label || option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "multiselect":
+      return (
+        <div className={fieldClassName}>
+          <Label htmlFor={fieldId}>{fieldName}</Label>
+          <div className="border rounded-md p-3 mt-2 max-h-60 overflow-y-auto">
+            {field.options?.map((option: any) => {
+              const optionValue = option.value || option;
+              const optionLabel = option.label || option;
+              const isSelected = Array.isArray(value) && value.includes(optionValue);
+
+              return (
+                <div key={optionValue} className="flex items-center space-x-2 py-1">
+                  <Checkbox
+                    id={`${fieldId}-${optionValue}`}
+                    checked={isSelected}
+                    onCheckedChange={(checked) => {
+                      let newValue = [...(Array.isArray(value) ? value : [])];
+                      if (checked) {
+                        if (!newValue.includes(optionValue)) {
+                          newValue.push(optionValue);
+                        }
+                      } else {
+                        newValue = newValue.filter((v) => v !== optionValue);
+                      }
+                      onInputChange(fieldId, newValue);
+                    }}
+                  />
+                  <Label htmlFor={`${fieldId}-${optionValue}`}>{optionLabel}</Label>
+                </div>
+              );
+            })}
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "toggle":
+      return (
+        <div className={fieldClassName}>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id={fieldId}
+              checked={!!value}
+              onCheckedChange={(checked) => onInputChange(fieldId, checked)}
+            />
+            <Label htmlFor={fieldId}>{fieldName}</Label>
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "checkbox":
+      return (
+        <div className={fieldClassName}>
+          <Label className="mb-2 block">{fieldName}</Label>
+          <div className="space-y-2">
+            {field.options?.map((option: any) => {
+              const optionValue = option.value || option;
+              const optionLabel = option.label || option;
+              const isChecked = Array.isArray(value) ? value.includes(optionValue) : false;
+
+              return (
+                <div key={optionValue} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${fieldId}-${optionValue}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      let newValue = [...(Array.isArray(value) ? value : [])];
+                      if (checked) {
+                        if (!newValue.includes(optionValue)) {
+                          newValue.push(optionValue);
+                        }
+                      } else {
+                        newValue = newValue.filter((v) => v !== optionValue);
+                      }
+                      onInputChange(fieldId, newValue);
+                    }}
+                  />
+                  <Label htmlFor={`${fieldId}-${optionValue}`}>{optionLabel}</Label>
+                </div>
+              );
+            })}
+          </div>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "radio":
+      return (
+        <div className={fieldClassName}>
+          <Label className="mb-2 block">{fieldName}</Label>
+          <RadioGroup
+            value={value || ""}
+            onValueChange={(newValue) => onInputChange(fieldId, newValue)}
+          >
+            {field.options?.map((option: any) => {
+              const optionValue = option.value || option;
+              const optionLabel = option.label || option;
+
+              return (
+                <div key={optionValue} className="flex items-center space-x-2">
+                  <RadioGroupItem value={optionValue} id={`${fieldId}-${optionValue}`} />
+                  <Label htmlFor={`${fieldId}-${optionValue}`}>{optionLabel}</Label>
+                </div>
+              );
+            })}
+          </RadioGroup>
+          {(helpText || hasError) && (
+            <p className={cn("text-sm mt-1", hasError ? "text-destructive" : "text-gray-500")}>
+              {hasError ? errorMessage : helpText}
+            </p>
+          )}
+        </div>
+      );
+
+    case "color":
       return (
         <ColorPickerField
-          {...commonProps}
-          placeholder={field.placeholder || `Select color`}
-          showAlpha={field.advanced?.showAlpha}
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          helpText={hasError ? errorMessage : helpText}
+          className={fieldClassName}
         />
       );
-    case 'radioCards':
+
+    case "slug":
       return (
-        <RadioCardsField
-          {...commonProps}
+        <SlugInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          prefix={field.prefix || ""}
+          suffix={field.suffix || ""}
+          className={fieldClassName}
+        />
+      );
+
+    case "tags":
+      return (
+        <TagsInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || []}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          maxTags={field.maxTags || 10}
+          className={fieldClassName}
+        />
+      );
+
+    case "mask":
+      return (
+        <MaskInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
+          mask={field.mask || ""}
+          className={fieldClassName}
+        />
+      );
+
+    case "otp":
+      return (
+        <OTPInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          length={field.length || 6}
+          helpText={hasError ? errorMessage : helpText}
+          className={fieldClassName}
+        />
+      );
+
+    case "autocomplete":
+      return (
+        <AutocompleteInputField
+          id={fieldId}
+          label={fieldName}
+          value={value || ""}
+          onChange={(newValue) => onInputChange(fieldId, newValue)}
+          placeholder={placeholder}
+          required={required}
+          helpText={hasError ? errorMessage : helpText}
           options={field.options || []}
+          className={fieldClassName}
         />
       );
-    case 'checkboxCards':
-      return (
-        <CheckboxCardsField
-          {...commonProps}
-          value={formData[field.api_id] || []}
-          options={field.options || []}
-          maxSelections={field.maxSelections}
-        />
-      );
-    case 'file':
-      return (
-        <FileInputField
-          {...commonProps}
-          value={formData[field.api_id] || null}
-          accept={field.accept}
-          maxSize={field.maxSize || 10}
-          showPreview={field.showPreview !== false}
-        />
-      );
-    case 'files':
-      return (
-        <MultiFileInputField
-          {...commonProps}
-          value={formData[field.api_id] || []}
-          accept={field.accept}
-          maxSize={field.maxSize || 10}
-          maxFiles={field.maxFiles || 5}
-          showPreviews={field.showPreviews !== false}
-        />
-      );
-    case 'json':
-      return (
-        <JSONEditorField
-          {...commonProps}
-          value={formData[field.api_id] || {}}
-          rows={field.rows || 10}
-        />
-      );
-    case 'rating':
-      return (
-        <RatingField
-          {...commonProps}
-          value={formData[field.api_id] || 0}
-          maxRating={field.maxRating || 5}
-          allowHalf={field.allowHalf}
-          size={field.size || 'md'}
-        />
-      );
-    case 'slider':
-      return (
-        <SliderField
-          {...commonProps}
-          value={formData[field.api_id] || 0}
-          min={field.min || 0}
-          max={field.max || 100}
-          step={field.step || 1}
-          showInput={field.showInput !== false}
-          showMarks={field.advanced?.showMarks}
-          markStep={field.advanced?.markStep}
-        />
-      );
-    case 'hash':
-      return (
-        <HashInputField
-          {...commonProps}
-          placeholder={field.placeholder || `Enter hash value`}
-        />
-      );
-      
-    case 'icon':
-      return (
-        <IconSelectField
-          {...commonProps}
-        />
-      );
-      
-    case 'listbox':
-      return (
-        <ListboxField
-          {...commonProps}
-          placeholder={field.placeholder || `Select an option`}
-          options={field.options || []}
-        />
-      );
-      
-    case 'treeView':
-      return (
-        <TreeViewField
-          {...commonProps}
-          items={field.items || []}
-          selectedIds={formData[field.api_id] || []}
-          multiSelect={field.multiSelect !== false}
-        />
-      );
-      
-    case 'inlineRepeater':
-      return (
-        <InlineRepeaterField
-          {...commonProps}
-          fields={field.fields || []}
-          value={formData[field.api_id] || []}
-          addButtonText={field.addButtonText || "Add Item"}
-          initialItemData={field.initialItemData || {}}
-        />
-      );
-      
-    case 'divider':
-      return (
-        <DividerField
-          id={field.api_id}
-          label={field.name}
-          className="mb-5"
-          color={field.color || 'muted'}
-          thickness={field.thickness || 1}
-          style={field.style || 'solid'}
-        />
-      );
-      
-    case 'superHeader':
-      return (
-        <SuperHeaderField
-          id={field.api_id}
-          text={field.name}
-          className="mb-5"
-          size={field.size || 'lg'}
-          color={field.color || 'default'}
-          align={field.align || 'left'}
-          hasDivider={field.hasDivider || false}
-        />
-      );
-      
-    case 'detailGroup':
-      return (
-        <DetailGroupField
-          id={field.api_id}
-          title={field.name}
-          description={field.description}
-          items={field.items || []}
-          className="mb-5"
-          maxHeight={field.maxHeight}
-          bordered={field.bordered !== false}
-          labelWidth={field.labelWidth || 'auto'}
-        />
-      );
-      
-    case 'rawGroup':
-      return (
-        <RawGroupField
-          id={field.api_id}
-          className="mb-5"
-        >
-          {field.children}
-        </RawGroupField>
-      );
-      
-    case 'collectionItem':
-      return (
-        <CollectionItemField
-          {...commonProps}
-          collection={field.collection || ''}
-          placeholder={field.placeholder || `Select item`}
-          multiple={field.multiple || false}
-          displayField={field.displayField || 'title'}
-          searchFields={field.searchFields || ['title']}
-          items={field.items || []}
-        />
-      );
-      
+
     default:
-      return <div key={field.id}>Unknown field type: {field.type}</div>;
+      return (
+        <div>
+          <p className="text-sm text-gray-500">Field type '{field.type}' not supported in preview</p>
+        </div>
+      );
   }
-}
+};
+
+export default FieldRenderer;

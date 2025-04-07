@@ -32,6 +32,9 @@ import { MarkdownEditorField } from './inputs/MarkdownEditorField';
 import { TagsInputField } from './inputs/TagsInputField';
 import { SlugInputField } from './inputs/SlugInputField';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { ValidationSettings } from '@/services/CollectionService';
+import { FieldAdvancedPanel } from './FieldAdvancedPanel';
 
 interface AppearanceSettings {
   floatLabel?: boolean;
@@ -41,6 +44,16 @@ interface AppearanceSettings {
   showCharCount?: boolean;
   customClass?: string;
   customCss?: string;
+  textAlign?: string;
+  labelPosition?: string;
+  labelWidth?: number;
+  showBorder?: boolean;
+  showBackground?: boolean;
+  roundedCorners?: string;
+  fieldSize?: string;
+  labelSize?: string;
+  uiVariant?: string;
+  isDarkMode?: boolean;
 }
 
 interface AdvancedSettings {
@@ -143,9 +156,10 @@ export function FieldConfigPanel({
   onUpdateAdvanced 
 }: FieldConfigPanelProps) {
   const [activeTab, setActiveTab] = useState('general');
-  const [validationSettings, setValidationSettings] = useState({});
+  const [validationSettings, setValidationSettings] = useState<ValidationSettings>({});
   const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>({});
   const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({});
+  const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
     if (fieldData) {
@@ -176,26 +190,72 @@ export function FieldConfigPanel({
     }
   });
 
-  const handleSubmit = (values: any) => {
-    const combinedData = {
-      ...values,
-      validation: validationSettings,
-      appearance: appearanceSettings,
-      advanced: advancedSettings,
-    };
-    
-    onSave(combinedData);
+  useEffect(() => {
+    if (fieldData) {
+      form.reset({
+        ...fieldData,
+        name: fieldData.name || '',
+        description: fieldData.description || '',
+        helpText: fieldData.helpText || '',
+        required: fieldData.required || false,
+        ui_options: fieldData.ui_options || {
+          placeholder: '',
+          help_text: '',
+          display_mode: 'default',
+          showCharCount: false,
+          width: 100,
+          hidden_in_forms: false
+        }
+      });
+    }
+  }, [fieldData, form]);
+
+  const handleSubmit = async (values: any) => {
+    setIsSaving(true);
+    try {
+      const combinedData = {
+        ...values,
+        validation: validationSettings,
+        appearance: appearanceSettings,
+        advanced: advancedSettings,
+      };
+      
+      await onSave(combinedData);
+      
+      toast({
+        title: fieldData ? 'Field updated' : 'Field created',
+        description: `Field "${values.name}" has been ${fieldData ? 'updated' : 'created'} successfully`,
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Error saving field:', error);
+      
+      toast({
+        title: 'Error saving field',
+        description: 'There was a problem saving the field. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleUpdateValidation = (data: any) => {
+  const handleUpdateValidation = (data: ValidationSettings) => {
+    console.log('Validation settings updated:', data);
     setValidationSettings(data);
+    
+    if (data.required !== undefined && form.getValues('required') !== data.required) {
+      form.setValue('required', data.required);
+    }
   };
 
-  const handleUpdateAppearance = (data: any) => {
+  const handleUpdateAppearance = (data: AppearanceSettings) => {
+    console.log('Appearance settings updated:', data);
     setAppearanceSettings(data);
   };
 
-  const handleUpdateAdvanced = (data: any) => {
+  const handleUpdateAdvanced = (data: AdvancedSettings) => {
+    console.log('Advanced settings updated:', data);
     setAdvancedSettings(data);
     onUpdateAdvanced(data);
   };
@@ -204,6 +264,7 @@ export function FieldConfigPanel({
     const fieldName = form.watch('name') || "Field Label";
     const placeholder = form.watch('ui_options.placeholder') || "Enter value...";
     const helpText = form.watch('helpText');
+    const defaultValue = form.watch('defaultValue') || '';
 
     switch (fieldType) {
       case 'text':
@@ -216,8 +277,10 @@ export function FieldConfigPanel({
               placeholder={placeholder}
               helpText={helpText}
               keyFilter={form.watch('keyFilter') || "none"}
-              floatLabel={appearanceSettings.floatLabel}
-              filled={appearanceSettings.filled}
+              floatLabel={appearanceSettings?.floatLabel || false}
+              filled={appearanceSettings?.filled || false}
+              value={defaultValue}
+              onChange={() => {}} // Preview only, no changes needed
             />
           </div>
         );
@@ -233,12 +296,12 @@ export function FieldConfigPanel({
               min={form.watch('min')}
               max={form.watch('max')}
               placeholder={placeholder}
-              floatLabel={appearanceSettings.floatLabel}
-              filled={appearanceSettings.filled}
-              showButtons={advancedSettings.showButtons}
-              buttonLayout={advancedSettings.buttonLayout || "horizontal"}
-              prefix={advancedSettings.prefix}
-              suffix={advancedSettings.suffix}
+              floatLabel={appearanceSettings?.floatLabel || false}
+              filled={appearanceSettings?.filled || false}
+              showButtons={advancedSettings?.showButtons || false}
+              buttonLayout={advancedSettings?.buttonLayout || "horizontal"}
+              prefix={advancedSettings?.prefix || ""}
+              suffix={advancedSettings?.suffix || ""}
             />
           </div>
         );
@@ -252,8 +315,8 @@ export function FieldConfigPanel({
               onChange={() => {}}
               label={fieldName}
               placeholder={placeholder}
-              floatLabel={appearanceSettings.floatLabel}
-              filled={appearanceSettings.filled}
+              floatLabel={appearanceSettings?.floatLabel || false}
+              filled={appearanceSettings?.filled || false}
               helpText={helpText}
             />
           </div>
@@ -268,9 +331,9 @@ export function FieldConfigPanel({
               onChange={() => {}}
               label={fieldName}
               placeholder={placeholder}
-              mask={advancedSettings.mask || ''}
-              floatLabel={appearanceSettings.floatLabel}
-              filled={appearanceSettings.filled}
+              mask={advancedSettings?.mask || ''}
+              floatLabel={appearanceSettings?.floatLabel || false}
+              filled={appearanceSettings?.filled || false}
               helpText={helpText}
             />
           </div>
@@ -304,8 +367,8 @@ export function FieldConfigPanel({
                 { label: 'Option 2', value: 'option2' },
                 { label: 'Option 3', value: 'option3' }
               ]}
-              floatLabel={appearanceSettings.floatLabel}
-              filled={appearanceSettings.filled}
+              floatLabel={appearanceSettings?.floatLabel || false}
+              filled={appearanceSettings?.filled || false}
               helpText={helpText}
             />
           </div>
@@ -622,25 +685,28 @@ export function FieldConfigPanel({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100">
-            <TabsTrigger value="general" className="data-[state=active]:bg-white">General</TabsTrigger>
-            <TabsTrigger value="validation" className="data-[state=active]:bg-white">Validation</TabsTrigger>
-            <TabsTrigger value="appearance" className="data-[state=active]:bg-white">Appearance</TabsTrigger>
-            <TabsTrigger value="advanced" className="data-[state=active]:bg-white">Advanced</TabsTrigger>
+        <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="validation">Validation</TabsTrigger>
+            <TabsTrigger value="appearance">Appearance</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="general">
-            <div className="space-y-4">
+          <TabsContent value="general" className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Field Name <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Field Label</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter field name" {...field} />
+                      <Input {...field} />
                     </FormControl>
+                    <FormDescription>
+                      The label displayed to users
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -648,79 +714,129 @@ export function FieldConfigPanel({
               
               <FormField
                 control={form.control}
-                name="description"
+                name="apiId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>API ID</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter field description" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="helpText"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Help Text</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Additional help text" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Provide additional context or guidance for this field
-                    </FormDescription>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="required"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Required Field</FormLabel>
-                      <FormDescription>
-                        Make this field mandatory for content creation
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                      <Input 
+                        {...field} 
+                        value={field.value || form.watch('name')?.toLowerCase().replace(/\s+/g, '_')} 
+                        onChange={field.onChange} 
                       />
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="ui_options.placeholder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Placeholder</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter placeholder text" {...field} />
-                    </FormControl>
                     <FormDescription>
-                      Text displayed when the field is empty
+                      Identifier used in the API
                     </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-              
-              {renderFieldTypeSpecificOptions()}
-              
-              {renderFieldPreview()}
             </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Internal description of this field
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="helpText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Help Text</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Displayed below the field to assist users
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="ui_options.placeholder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Placeholder</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Placeholder text shown when field is empty
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="required"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Required Field</FormLabel>
+                    <FormDescription>
+                      Users must complete this field to submit the form
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="ui_options.hidden_in_forms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Hidden Field</FormLabel>
+                    <FormDescription>
+                      Field will not be visible in the form
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {renderFieldTypeSpecificOptions()}
+            
+            {renderFieldPreview()}
           </TabsContent>
           
           <TabsContent value="validation">
             <FieldValidationPanel 
-              fieldType={fieldType}
+              fieldType={fieldType} 
               initialData={validationSettings}
               onUpdate={handleUpdateValidation}
             />
@@ -735,35 +851,29 @@ export function FieldConfigPanel({
           </TabsContent>
           
           <TabsContent value="advanced">
-            <FieldAdvancedTab
+            <FieldAdvancedPanel
               fieldType={fieldType}
-              fieldData={{
-                advanced: advancedSettings
-              }}
-              onUpdate={(data) => {
-                if (data.advanced) {
-                  handleUpdateAdvanced(data.advanced);
-                }
-              }}
+              initialData={advancedSettings}
+              onSave={handleUpdateAdvanced}
             />
           </TabsContent>
         </Tabs>
         
-        <div className="flex justify-end space-x-4 mt-6">
+        <div className="flex justify-end space-x-4 pt-6">
           <Button 
             type="button" 
-            onClick={onCancel} 
-            variant="outline"
-            className="px-4 py-2"
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isSaving}
           >
             Cancel
           </Button>
           <Button 
             type="submit" 
-            variant="default"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700"
+            disabled={isSaving}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            Save Field
+            {isSaving ? 'Saving...' : (fieldData ? 'Update Field' : 'Create Field')}
           </Button>
         </div>
       </form>

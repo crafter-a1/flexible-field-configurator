@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -16,118 +17,168 @@ interface JSONEditorFieldProps {
   helpText?: string;
   className?: string;
   rows?: number;
+  readOnly?: boolean;
 }
 
 export function JSONEditorField({
   id,
   label,
-  value = {},
+  value,
   onChange,
-  placeholder = '{\n  "key": "value"\n}',
+  placeholder = "Enter JSON data",
   required = false,
   helpText,
   className,
-  rows = 10
+  rows = 8,
+  readOnly = false
 }: JSONEditorFieldProps) {
-  // Keep a string representation for the editor
-  const [jsonString, setJsonString] = useState('');
-  // Track validation errors
+  const [internalValue, setInternalValue] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [isPrettyPrinted, setIsPrettyPrinted] = useState(true);
   
-  // Convert the value to a formatted JSON string when the component mounts or value changes
+  // Convert object to string for display
   useEffect(() => {
     try {
-      const formatted = JSON.stringify(value, null, 2);
-      setJsonString(formatted);
+      if (value === undefined || value === null) {
+        setInternalValue('');
+      } else if (typeof value === 'object') {
+        setInternalValue(JSON.stringify(value, null, 2));
+        setIsPrettyPrinted(true);
+      } else if (typeof value === 'string') {
+        try {
+          // Try to parse and re-stringify to pretty print
+          const parsedValue = JSON.parse(value);
+          setInternalValue(JSON.stringify(parsedValue, null, 2));
+          setIsPrettyPrinted(true);
+        } catch (e) {
+          // If it's not valid JSON, just use the string as-is
+          setInternalValue(value);
+          setIsPrettyPrinted(false);
+        }
+      } else {
+        setInternalValue(String(value));
+        setIsPrettyPrinted(false);
+      }
       setError(null);
-    } catch (err) {
-      console.error('Failed to parse JSON value:', err);
-      setError('Invalid JSON structure');
+    } catch (e) {
+      setError('Invalid JSON format');
+      setInternalValue(typeof value === 'string' ? value : '');
     }
   }, [value]);
   
-  // Handle changes to the JSON string
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newJsonString = e.target.value;
-    setJsonString(newJsonString);
+    const newValue = e.target.value;
+    setInternalValue(newValue);
     
-    try {
-      // Try to parse the JSON
-      if (newJsonString.trim()) {
-        const parsed = JSON.parse(newJsonString);
-        onChange(parsed);
-        setError(null);
-      } else {
-        // Empty is valid, set to empty object
-        onChange({});
-        setError(null);
+    if (!readOnly) {
+      try {
+        if (newValue.trim() === '') {
+          onChange('');
+          setError(null);
+        } else {
+          const parsed = JSON.parse(newValue);
+          onChange(parsed);
+          setError(null);
+        }
+      } catch (e) {
+        setError('Invalid JSON format');
+        // Still update with the raw string to allow editing
+        // But don't call onChange to avoid saving invalid JSON
       }
-    } catch (err) {
-      // Invalid JSON, don't update the value but show an error
-      setError('Invalid JSON: ' + (err as Error).message);
     }
   };
   
-  // Format the JSON with prettier indentation
-  const formatJSON = () => {
+  const formatJson = () => {
     try {
-      if (jsonString.trim()) {
-        const parsed = JSON.parse(jsonString);
-        const formatted = JSON.stringify(parsed, null, 2);
-        setJsonString(formatted);
-        setError(null);
+      if (internalValue.trim() === '') {
+        return;
       }
-    } catch (err) {
-      setError('Cannot format invalid JSON: ' + (err as Error).message);
+      
+      const parsed = JSON.parse(internalValue);
+      setInternalValue(JSON.stringify(parsed, null, 2));
+      setIsPrettyPrinted(true);
+      setError(null);
+      onChange(parsed);
+    } catch (e) {
+      setError('Cannot format invalid JSON');
     }
   };
-
+  
+  const compressJson = () => {
+    try {
+      if (internalValue.trim() === '') {
+        return;
+      }
+      
+      const parsed = JSON.parse(internalValue);
+      setInternalValue(JSON.stringify(parsed));
+      setIsPrettyPrinted(false);
+      setError(null);
+      onChange(parsed);
+    } catch (e) {
+      setError('Cannot compress invalid JSON');
+    }
+  };
+  
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {label && (
-        <div className="flex justify-between items-center">
-          <Label htmlFor={id}>
-            {label}{required && <span className="text-red-500 ml-1">*</span>}
-          </Label>
+        <Label htmlFor={id} className="font-medium">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+      )}
+      
+      {!readOnly && (
+        <div className="flex space-x-2 mb-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={formatJSON}
-            className="text-xs"
+            onClick={formatJson}
+            disabled={isPrettyPrinted || internalValue.trim() === ''}
+            className="text-xs h-8"
           >
-            <Code className="h-3 w-3 mr-1" /> Format
+            <Code className="mr-1 h-3 w-3" />
+            Pretty Print
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={compressJson}
+            disabled={!isPrettyPrinted || internalValue.trim() === ''}
+            className="text-xs h-8"
+          >
+            <Code className="mr-1 h-3 w-3" />
+            Compress
           </Button>
         </div>
       )}
       
       <Textarea
         id={id}
-        value={jsonString}
+        value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        rows={rows}
         className={cn(
           "font-mono text-sm",
-          error ? "border-red-500 focus-visible:ring-red-500" : ""
+          error ? "border-red-500" : "",
+          readOnly ? "bg-gray-50" : ""
         )}
-        required={required}
-        aria-describedby={helpText || error ? `${id}-description` : undefined}
+        rows={rows}
+        readOnly={readOnly}
       />
       
       {error && (
-        <Alert variant="destructive" className="py-2">
+        <Alert variant="destructive" className="py-2 text-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="ml-2 text-xs">
-            {error}
-          </AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
       
       {helpText && !error && (
-        <p id={`${id}-description`} className="text-muted-foreground text-xs">
-          {helpText}
-        </p>
+        <p className="text-muted-foreground text-xs">{helpText}</p>
       )}
     </div>
   );

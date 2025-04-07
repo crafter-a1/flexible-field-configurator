@@ -42,6 +42,7 @@ export function WysiwygEditorField({
         required={required}
         helpText={helpText}
         minHeight={minHeight}
+        className={className}
       />
     </div>
   );

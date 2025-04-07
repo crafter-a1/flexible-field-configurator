@@ -72,9 +72,48 @@ export function adaptNumberFieldSettings(settings: any): any {
 }
 
 export function adaptFieldsForPreview(fields: any[]): any[] {
+  console.log('Raw fields data received for preview:', JSON.stringify(fields, null, 2));
+
   return fields.map(field => {
     const apiId = field.api_id || field.apiId || field.name?.toLowerCase().replace(/\s+/g, '_');
-    
+
+    // Extract ui_options from either direct property or from settings
+    const ui_options = field.ui_options || (field.settings?.ui_options) || {};
+
+    // Extract appearance settings from field or settings
+    const appearance = field.appearance || (field.settings?.appearance) || {};
+    console.log(`Extracted appearance settings for field ${field.name}:`, JSON.stringify(appearance, null, 2));
+
+    // Ensure uiVariant is properly extracted
+    if (appearance.uiVariant) {
+      console.log(`UI Variant for field ${field.name}:`, appearance.uiVariant);
+    } else {
+      console.log(`No UI Variant found for field ${field.name}`);
+    }
+
+    // Get placeholder with detailed fallback logging
+    let placeholder = null;
+    if (ui_options.placeholder) {
+      console.log(`Found placeholder in ui_options for ${field.name}:`, ui_options.placeholder);
+      placeholder = ui_options.placeholder;
+    } else if (field.placeholder) {
+      console.log(`Found placeholder in field.placeholder for ${field.name}:`, field.placeholder);
+      placeholder = field.placeholder;
+    } else {
+      placeholder = `Enter ${field.name}...`;
+      console.log(`Using default placeholder for ${field.name}:`, placeholder);
+    }
+
+    // Debug logging
+    console.log('Field data for preview:', {
+      fieldName: field.name,
+      fieldType: field.type,
+      ui_options,
+      settings: field.settings,
+      appearance,
+      placeholder
+    });
+
     return {
       id: field.id,
       name: field.name,
@@ -82,9 +121,10 @@ export function adaptFieldsForPreview(fields: any[]): any[] {
       apiId: apiId,
       required: field.required || false,
       helpText: field.helpText || field.description,
-      placeholder: field.ui_options?.placeholder || field.placeholder,
+      placeholder: placeholder,
+      ui_options: ui_options,
       validation: field.validation || {},
-      appearance: field.appearance || {},
+      appearance: appearance,
       advanced: field.advanced || {},
       options: field.options || [],
       min: field.min !== undefined ? field.min : (field.validation?.min !== undefined ? field.validation.min : undefined),

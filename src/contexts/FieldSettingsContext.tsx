@@ -1,38 +1,21 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { 
-  getNormalizedFieldSettings, 
-  updateFieldSettings, 
   getValidationSettings, 
   getAppearanceSettings, 
   getAdvancedSettings,
   getUIOptions,
   getGeneralSettings,
-  createUpdatePayload,
-  createColumnUpdatePayload,
+  createColumnUpdatePayload as createUpdatePayload,
+  updateFieldSettings,
   FieldSettings,
   ValidationSettings,
   AppearanceSettings, 
   AdvancedSettings,
-  UIOptions
+  UIOptions,
+  GeneralSettings
 } from '@/utils/fieldSettingsHelpers';
 import { toast } from '@/hooks/use-toast';
 import { updateField } from '@/services/CollectionService';
-
-interface GeneralSettings {
-  placeholder?: string;
-  helpText?: string;
-  hidden_in_forms?: boolean;
-  keyFilter?: string;
-  minValue?: number;
-  maxValue?: number;
-  otpLength?: number;
-  maxTags?: number;
-  prefix?: string;
-  suffix?: string;
-  rows?: number;
-  minHeight?: string;
-  [key: string]: any;
-}
 
 interface FieldSettingsContextType {
   // Field data
@@ -272,7 +255,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Collection ID:', collectionId);
       
       // Create the field data object using our helper for the new columns
-      const fieldUpdateData = createColumnUpdatePayload(section, settings);
+      const fieldUpdateData = createUpdatePayload(section, settings);
       
       // Call the service to update the field in the database
       const updatedField = await updateField(collectionId!, fieldId!, fieldUpdateData);

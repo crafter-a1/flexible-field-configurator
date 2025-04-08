@@ -8,6 +8,68 @@ export interface FieldSettings {
   general: GeneralSettings;
 }
 
+// Define ValidationSettings interface
+export interface ValidationSettings {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  email?: boolean;
+  url?: boolean;
+  unique?: boolean;
+  message?: string;
+  maxTags?: number;
+  [key: string]: any;
+}
+
+// Define AppearanceSettings interface
+export interface AppearanceSettings {
+  uiVariant?: "standard" | "material" | "pill" | "borderless" | "underlined";
+  textAlign?: string;
+  labelPosition?: string;
+  labelWidth?: number;
+  floatLabel?: boolean;
+  filled?: boolean;
+  showBorder?: boolean;
+  showBackground?: boolean;
+  roundedCorners?: string;
+  fieldSize?: string;
+  labelSize?: string;
+  customClass?: string;
+  customCss?: string;
+  colors?: Record<string, string>;
+  isDarkMode?: boolean;
+  responsive?: {
+    mobile?: Record<string, any>;
+    tablet?: Record<string, any>;
+    desktop?: Record<string, any>;
+  };
+  [key: string]: any;
+}
+
+// Define AdvancedSettings interface
+export interface AdvancedSettings {
+  defaultValue?: any;
+  generatedValue?: boolean;
+  readonly?: boolean;
+  visibility?: string;
+  conditionalLogic?: any;
+  calculated?: boolean;
+  calculation?: string;
+  transformations?: any[];
+  [key: string]: any;
+}
+
+// Define UIOptions interface
+export interface UIOptions {
+  placeholder?: string;
+  help_text?: string;
+  hidden_in_forms?: boolean;
+  [key: string]: any;
+}
+
 // Add GeneralSettings interface
 export interface GeneralSettings {
   placeholder?: string;
@@ -23,6 +85,23 @@ export interface GeneralSettings {
   rows?: number;
   minHeight?: string;
   [key: string]: any;
+}
+
+// Helper functions for getting settings
+export function getValidationSettings(fieldData: any): ValidationSettings {
+  return fieldData?.validation_settings || fieldData?.validation || fieldData?.settings?.validation || {};
+}
+
+export function getAppearanceSettings(fieldData: any): AppearanceSettings {
+  return fieldData?.appearance_settings || fieldData?.appearance || fieldData?.settings?.appearance || {};
+}
+
+export function getAdvancedSettings(fieldData: any): AdvancedSettings {
+  return fieldData?.advanced_settings || fieldData?.advanced || fieldData?.settings?.advanced || {};
+}
+
+export function getUIOptions(fieldData: any): UIOptions {
+  return fieldData?.ui_options_settings || fieldData?.ui_options || fieldData?.settings?.ui_options || {};
 }
 
 // Add function to get general settings
@@ -78,4 +157,57 @@ export function createColumnUpdatePayload(section: keyof FieldSettings, settings
     default:
       return { [`${section}_settings`]: settings };
   }
+}
+
+// Helper functions for normalizing fields
+export function getNormalizedFieldSettings(fieldData: any): FieldSettings {
+  return {
+    validation: getValidationSettings(fieldData),
+    appearance: getAppearanceSettings(fieldData),
+    advanced: getAdvancedSettings(fieldData),
+    ui_options: getUIOptions(fieldData),
+    general: getGeneralSettings(fieldData)
+  };
+}
+
+// Dummy functions to satisfy imports in other files
+export function prepareFieldForPreview(field: any): any {
+  return field;
+}
+
+export function standardizeFieldForDatabase(field: any): any {
+  return field;
+}
+
+export function updateFieldSettings(fieldData: any, section: keyof FieldSettings, settings: any): any {
+  const updated = { ...fieldData };
+  switch (section) {
+    case 'validation':
+      updated.validation_settings = settings;
+      updated.validation = settings; // For backward compatibility
+      break;
+    case 'appearance':
+      updated.appearance_settings = settings;
+      updated.appearance = settings; // For backward compatibility
+      break;
+    case 'advanced':
+      updated.advanced_settings = settings;
+      updated.advanced = settings; // For backward compatibility
+      break;
+    case 'ui_options':
+      updated.ui_options_settings = settings;
+      updated.ui_options = settings; // For backward compatibility
+      break;
+    case 'general':
+      updated.general_settings = settings;
+      break;
+    default:
+      updated[`${section}_settings`] = settings;
+  }
+  return updated;
+}
+
+// Backward compatibility wrapper for createColumnUpdatePayload
+export function createUpdatePayload(section: keyof FieldSettings, settings: any): any {
+  return createColumnUpdatePayload(section, settings);
 }

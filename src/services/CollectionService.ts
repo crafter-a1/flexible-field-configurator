@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { normalizeAppearanceSettings, validateUIVariant } from '@/utils/inputAdapters';
 import { toast } from '@/hooks/use-toast';
-import { AdvancedSettings } from '@/utils/fieldSettingsHelpers';
+import { GeneralSettings, AdvancedSettings } from '@/utils/fieldSettingsHelpers';
 
 export interface ValidationSettings {
   required?: boolean;
@@ -40,22 +40,6 @@ export interface AppearanceSettings {
     tablet?: Record<string, any>;
     desktop?: Record<string, any>;
   };
-  [key: string]: any;
-}
-
-export interface GeneralSettings {
-  placeholder?: string;
-  helpText?: string;
-  hidden_in_forms?: boolean;
-  keyFilter?: string;
-  minValue?: number;
-  maxValue?: number;
-  otpLength?: number;
-  maxTags?: number;
-  prefix?: string;
-  suffix?: string;
-  rows?: number;
-  minHeight?: string;
   [key: string]: any;
 }
 
@@ -112,6 +96,15 @@ export interface CollectionField {
   sort_order?: number;
   collection_id?: string;
   placeholder?: string;
+  keyFilter?: string;
+  min?: number;
+  max?: number;
+  length?: number;
+  maxTags?: number;
+  prefix?: string;
+  suffix?: string;
+  rows?: number;
+  minHeight?: string;
 }
 
 type SupabaseFieldRow = Database['public']['Tables']['fields']['Row'] & {
@@ -332,7 +325,7 @@ export const CollectionService = {
       };
       
       // Add field type specific settings to general_settings
-      if (fieldData.keyFilter) generalSettings.keyFilter = fieldData.keyFilter;
+      if (fieldData.keyFilter !== undefined) generalSettings.keyFilter = fieldData.keyFilter;
       if (fieldData.min !== undefined) generalSettings.minValue = fieldData.min;
       if (fieldData.max !== undefined) generalSettings.maxValue = fieldData.max;
       if (fieldData.length !== undefined) generalSettings.otpLength = fieldData.length;

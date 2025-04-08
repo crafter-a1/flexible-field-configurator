@@ -1,9 +1,8 @@
-
 import { 
-  getNormalizedFieldSettings, 
+  getNormalizedFieldSettings,
   prepareFieldForPreview,
   standardizeFieldForDatabase
-} from './fieldSettingsHelpers';
+} from "./fieldSettingsHelpers";
 
 export function adaptCollectionFormData(values: any): any {
   const adaptedFields = values.fields.map((field: any) => {

@@ -1,22 +1,7 @@
 
 import React from 'react';
 import { useFieldSettings } from '@/contexts/FieldSettingsContext';
-
-export interface GeneralSettings {
-  placeholder?: string;
-  helpText?: string;
-  hidden_in_forms?: boolean;
-  keyFilter?: string;
-  minValue?: number;
-  maxValue?: number;
-  otpLength?: number;
-  maxTags?: number;
-  prefix?: string;
-  suffix?: string;
-  rows?: number;
-  minHeight?: string;
-  [key: string]: any;
-}
+import { GeneralSettings } from '@/utils/fieldSettingsHelpers';
 
 interface GeneralSettingsMiddlewareProps {
   children: (props: {

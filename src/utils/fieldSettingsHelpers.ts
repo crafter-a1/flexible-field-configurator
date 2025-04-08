@@ -1,4 +1,3 @@
-
 /**
  * Helper utilities for accessing and updating field settings consistently
  * across the application.
@@ -16,6 +15,12 @@ export interface FieldSettings {
   ui_options?: UIOptions;
   helpText?: string;
   general?: GeneralSettings;
+  // Add new column keys for direct database access
+  validation_settings?: string;
+  appearance_settings?: string;
+  advanced_settings?: string;
+  general_settings?: string;
+  ui_options_settings?: string;
 }
 
 export interface GeneralSettings {

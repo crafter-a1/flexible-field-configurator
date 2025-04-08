@@ -23,7 +23,8 @@ export function AdvancedSettingsMiddleware({
   
   // Create a specialized save function for advanced settings
   const saveAdvancedToDatabase = async (settings: AdvancedSettings) => {
-    return saveToDatabase('advanced_settings', settings);
+    // Pass 'advanced' as the section key instead of the column name
+    return saveToDatabase('advanced', settings);
   };
   
   return (

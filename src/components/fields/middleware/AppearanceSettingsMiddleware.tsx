@@ -23,7 +23,8 @@ export function AppearanceSettingsMiddleware({
   
   // Create a specialized save function for appearance settings
   const saveAppearanceToDatabase = async (settings: AppearanceSettings) => {
-    return saveToDatabase('appearance_settings', settings);
+    // Pass 'appearance' as the section key instead of the column name
+    return saveToDatabase('appearance', settings);
   };
   
   return (

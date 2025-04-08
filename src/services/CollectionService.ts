@@ -111,6 +111,14 @@ type SupabaseFieldRow = Database['public']['Tables']['fields']['Row'] & {
   general_settings?: GeneralSettings;
 };
 
+type ExtendedFieldRow = Database['public']['Tables']['fields']['Row'] & {
+  validation_settings?: ValidationSettings;
+  appearance_settings?: AppearanceSettings;
+  advanced_settings?: AdvancedSettings;
+  ui_options_settings?: Record<string, any>;
+  general_settings?: GeneralSettings;
+};
+
 const mapSupabaseCollection = (collection: Database['public']['Tables']['collections']['Row']): Collection => {
   return {
     id: collection.id,
@@ -129,7 +137,7 @@ const mapSupabaseCollection = (collection: Database['public']['Tables']['collect
   };
 };
 
-const mapSupabaseField = (field: SupabaseFieldRow): CollectionField => {
+const mapSupabaseField = (field: ExtendedFieldRow): CollectionField => {
   const settings = field.settings as Record<string, any> || {};
 
   // Debug logging for field mapping
@@ -405,14 +413,17 @@ export const CollectionService = {
         throw getCurrentError;
       }
 
-      debugLog(`Current field data from database:`, JSON.stringify(currentField, null, 2));
+      // Cast to our extended type
+      const currentFieldExtended = currentField as ExtendedFieldRow;
+
+      debugLog(`Current field data from database:`, JSON.stringify(currentFieldExtended, null, 2));
       
       // New column-based approach
     
       // Handle validation settings
       if (fieldData.validation_settings || fieldData.settings?.validation) {
         const newValidation = fieldData.validation_settings || fieldData.settings?.validation || {};
-        const currentValidation = currentField.validation_settings || {};
+        const currentValidation = currentFieldExtended.validation_settings || {};
         updateData.validation_settings = deepMerge(currentValidation, newValidation);
         debugLog('[updateField] New validation settings:', JSON.stringify(updateData.validation_settings, null, 2));
       }
@@ -420,7 +431,7 @@ export const CollectionService = {
       // Handle appearance settings
       if (fieldData.appearance_settings || fieldData.settings?.appearance) {
         const newAppearance = fieldData.appearance_settings || fieldData.settings?.appearance || {};
-        const currentAppearance = currentField.appearance_settings || {};
+        const currentAppearance = currentFieldExtended.appearance_settings || {};
         // Normalize appearance settings
         updateData.appearance_settings = normalizeAppearanceSettings(deepMerge(currentAppearance, newAppearance));
         debugLog('[updateField] New appearance settings:', JSON.stringify(updateData.appearance_settings, null, 2));
@@ -429,7 +440,7 @@ export const CollectionService = {
       // Handle advanced settings
       if (fieldData.advanced_settings || fieldData.settings?.advanced) {
         const newAdvanced = fieldData.advanced_settings || fieldData.settings?.advanced || {};
-        const currentAdvanced = currentField.advanced_settings || {};
+        const currentAdvanced = currentFieldExtended.advanced_settings || {};
         updateData.advanced_settings = deepMerge(currentAdvanced, newAdvanced);
         debugLog('[updateField] New advanced settings:', JSON.stringify(updateData.advanced_settings, null, 2));
       }
@@ -454,7 +465,7 @@ export const CollectionService = {
       
       // Only merge if we have new general settings to add
       if (Object.keys(newGeneralSettings).length > 0) {
-        const currentGeneralSettings = currentField.general_settings || {};
+        const currentGeneralSettings = currentFieldExtended.general_settings || {};
         updateData.general_settings = deepMerge(currentGeneralSettings, newGeneralSettings);
         debugLog('[updateField] New general settings:', JSON.stringify(updateData.general_settings, null, 2));
       }
@@ -462,7 +473,7 @@ export const CollectionService = {
       // Legacy settings structure - keep it for backward compatibility
       if (fieldData.settings) {
         // Copy the existing settings object to avoid reference issues
-        const currentSettings = currentField?.settings ? JSON.parse(JSON.stringify(currentField.settings)) : {};
+        const currentSettings = currentFieldExtended?.settings ? JSON.parse(JSON.stringify(currentFieldExtended.settings)) : {};
         
         // Deep merge settings
         const mergedSettings = deepMerge(currentSettings, fieldData.settings);

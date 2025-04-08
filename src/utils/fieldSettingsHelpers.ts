@@ -76,7 +76,7 @@ export interface GeneralSettings {
   helpText?: string;
   hidden_in_forms?: boolean;
   keyFilter?: string;
-  // Add all the missing properties
+  // Add all the missing properties with proper types
   minValue?: number;
   maxValue?: number;
   otpLength?: number;

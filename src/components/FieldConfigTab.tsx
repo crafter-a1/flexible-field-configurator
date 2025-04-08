@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GeneralSettings } from '@/utils/fieldSettingsHelpers';
 
 interface FieldConfigTabProps {
   fieldType: string | null;
@@ -51,7 +52,7 @@ export function FieldConfigTab({
       setRequired(fieldData.required || false);
       
       // Extract settings from the new general_settings structure first, then fallback
-      const generalSettings = fieldData.general_settings || {};
+      const generalSettings: GeneralSettings = fieldData.general_settings || {};
       const uiOptions = fieldData.settings?.ui_options || fieldData.ui_options_settings || {};
       
       // Set all general fields from general_settings or fallback locations
@@ -93,7 +94,7 @@ export function FieldConfigTab({
     e.preventDefault();
     
     // Create comprehensive general_settings object with all fields from the General tab
-    const generalSettings = {
+    const generalSettings: GeneralSettings = {
       placeholder,
       helpText,
       hidden_in_forms: hiddenInForms,

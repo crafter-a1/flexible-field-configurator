@@ -6,6 +6,7 @@ import {
   getAppearanceSettings, 
   getAdvancedSettings,
   getUIOptions,
+  getGeneralSettings,
   createUpdatePayload,
   createColumnUpdatePayload,
   FieldSettings,
@@ -16,6 +17,22 @@ import {
 } from '@/utils/fieldSettingsHelpers';
 import { toast } from '@/hooks/use-toast';
 import { updateField } from '@/services/CollectionService';
+
+interface GeneralSettings {
+  placeholder?: string;
+  helpText?: string;
+  hidden_in_forms?: boolean;
+  keyFilter?: string;
+  minValue?: number;
+  maxValue?: number;
+  otpLength?: number;
+  maxTags?: number;
+  prefix?: string;
+  suffix?: string;
+  rows?: number;
+  minHeight?: string;
+  [key: string]: any;
+}
 
 interface FieldSettingsContextType {
   // Field data
@@ -33,6 +50,7 @@ interface FieldSettingsContextType {
   appearance: AppearanceSettings;
   advanced: AdvancedSettings;
   uiOptions: UIOptions;
+  general: GeneralSettings;
   
   // Actions
   updateFieldData: (data: any) => void;
@@ -40,6 +58,7 @@ interface FieldSettingsContextType {
   updateAppearance: (settings: AppearanceSettings) => Promise<void>;
   updateAdvanced: (settings: AdvancedSettings) => Promise<void>;
   updateUIOptions: (options: UIOptions) => Promise<void>;
+  updateGeneral: (settings: GeneralSettings) => Promise<void>;
   saveToDatabase: (section: keyof FieldSettings, settings: any) => Promise<void>;
 }
 
@@ -69,6 +88,7 @@ export const FieldSettingsProvider: React.FC<{
   const appearance = getAppearanceSettings(fieldData);
   const advanced = getAdvancedSettings(fieldData);
   const uiOptions = getUIOptions(fieldData);
+  const general = getGeneralSettings(fieldData);
   
   // Update field data (used for receiving updates from parent components)
   const updateFieldData = useCallback((newFieldData: any) => {
@@ -200,6 +220,35 @@ export const FieldSettingsProvider: React.FC<{
     }
   }, [fieldData, onFieldUpdate]);
   
+  // Add new method to update general settings
+  const updateGeneral = useCallback(async (settings: GeneralSettings): Promise<void> => {
+    try {
+      console.log('[FieldSettingsContext] Updating general settings:', settings);
+      
+      // Update the field data with the new general settings
+      const updatedFieldData = {
+        ...fieldData,
+        general_settings: settings,
+      };
+      
+      setFieldData(updatedFieldData);
+      
+      if (onFieldUpdate) {
+        onFieldUpdate(updatedFieldData);
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('[FieldSettingsContext] Error updating general settings:', error);
+      toast({
+        title: "Error updating general settings",
+        description: "There was an error updating the general settings.",
+        variant: "destructive"
+      });
+      return Promise.reject(error);
+    }
+  }, [fieldData, onFieldUpdate]);
+  
   // Save a specific section to the database using the new column structure
   const saveToDatabase = useCallback(async (
     section: keyof FieldSettings, 
@@ -226,7 +275,7 @@ export const FieldSettingsProvider: React.FC<{
       const fieldUpdateData = createColumnUpdatePayload(section, settings);
       
       // Call the service to update the field in the database
-      const updatedField = await updateField(collectionId, fieldId, fieldUpdateData);
+      const updatedField = await updateField(collectionId!, fieldId!, fieldUpdateData);
       
       console.log('[FieldSettingsContext] Field updated in database:', updatedField);
       
@@ -299,11 +348,13 @@ export const FieldSettingsProvider: React.FC<{
     appearance,
     advanced,
     uiOptions,
+    general,
     updateFieldData,
     updateValidation,
     updateAppearance,
     updateAdvanced,
     updateUIOptions,
+    updateGeneral,
     saveToDatabase,
   };
 

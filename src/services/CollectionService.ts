@@ -46,6 +46,16 @@ export interface AppearanceSettings {
 export interface GeneralSettings {
   placeholder?: string;
   helpText?: string;
+  hidden_in_forms?: boolean;
+  keyFilter?: string;
+  minValue?: number;
+  maxValue?: number;
+  otpLength?: number;
+  maxTags?: number;
+  prefix?: string;
+  suffix?: string;
+  rows?: number;
+  minHeight?: string;
   [key: string]: any;
 }
 
@@ -101,6 +111,7 @@ export interface CollectionField {
   helpText?: string;
   sort_order?: number;
   collection_id?: string;
+  placeholder?: string;
 }
 
 type SupabaseFieldRow = Database['public']['Tables']['fields']['Row'] & {
@@ -155,12 +166,17 @@ const mapSupabaseField = (field: ExtendedFieldRow): CollectionField => {
   const uiOptionsSettings = field.ui_options_settings as Record<string, any> || settings.ui_options || {};
   const generalSettings = field.general_settings as GeneralSettings || {};
 
-  // Extract helpText from the right place - prefer general_settings, then fallback
+  // Extract helpText and placeholder from the right place - prefer general_settings, then fallback
   const helpText = generalSettings.helpText || settings.helpText || uiOptionsSettings.help_text;
+  const placeholder = generalSettings.placeholder || uiOptionsSettings.placeholder || '';
   
-  // Add helpText to general settings if it exists but isn't already there
-  if (helpText && !generalSettings.helpText) {
-    generalSettings.helpText = helpText;
+  // Add helpText and placeholder to general settings if it exists but isn't already there
+  const enhancedGeneralSettings = {...generalSettings};
+  if (helpText && !enhancedGeneralSettings.helpText) {
+    enhancedGeneralSettings.helpText = helpText;
+  }
+  if (placeholder && !enhancedGeneralSettings.placeholder) {
+    enhancedGeneralSettings.placeholder = placeholder;
   }
 
   // Log appearance settings specifically
@@ -168,11 +184,13 @@ const mapSupabaseField = (field: ExtendedFieldRow): CollectionField => {
     console.log(`Appearance settings for field ${field.name}:`, JSON.stringify(appearanceSettings, null, 2));
   }
   
+  // Log general settings specifically
+  if (enhancedGeneralSettings) {
+    console.log(`General settings for field ${field.name}:`, JSON.stringify(enhancedGeneralSettings, null, 2));
+  }
+  
   // Ensure appearance settings are properly normalized
   const normalizedAppearance = normalizeAppearanceSettings(appearanceSettings);
-
-  // Log helpText
-  console.log(`Help text for field ${field.name}:`, helpText);
 
   return {
     id: field.id,
@@ -186,7 +204,7 @@ const mapSupabaseField = (field: ExtendedFieldRow): CollectionField => {
     appearance_settings: normalizedAppearance,
     advanced_settings: advancedSettings,
     ui_options_settings: uiOptionsSettings,
-    general_settings: generalSettings,
+    general_settings: enhancedGeneralSettings,
     sort_order: field.sort_order || 0,
     collection_id: field.collection_id || undefined,
     
@@ -195,7 +213,8 @@ const mapSupabaseField = (field: ExtendedFieldRow): CollectionField => {
     appearance: normalizedAppearance,
     advanced: advancedSettings,
     ui_options: uiOptionsSettings,
-    helpText: helpText
+    helpText: helpText,
+    placeholder: placeholder
   };
 };
 
@@ -305,11 +324,28 @@ export const CollectionService = {
 
       const { apiId, ...restData } = fieldData;
 
-      // Extract general settings from fieldData or defaults
+      // Extract general settings from fieldData comprehensively
       const generalSettings: GeneralSettings = {
-        placeholder: fieldData.settings?.ui_options?.placeholder || "",
-        helpText: fieldData.helpText || fieldData.settings?.helpText || ""
+        placeholder: fieldData.placeholder || fieldData.settings?.ui_options?.placeholder || "",
+        helpText: fieldData.helpText || fieldData.settings?.helpText || fieldData.settings?.ui_options?.help_text || "",
+        hidden_in_forms: fieldData.settings?.ui_options?.hidden_in_forms || false
       };
+      
+      // Add field type specific settings to general_settings
+      if (fieldData.keyFilter) generalSettings.keyFilter = fieldData.keyFilter;
+      if (fieldData.min !== undefined) generalSettings.minValue = fieldData.min;
+      if (fieldData.max !== undefined) generalSettings.maxValue = fieldData.max;
+      if (fieldData.length !== undefined) generalSettings.otpLength = fieldData.length;
+      if (fieldData.maxTags !== undefined) generalSettings.maxTags = fieldData.maxTags;
+      if (fieldData.prefix !== undefined) generalSettings.prefix = fieldData.prefix;
+      if (fieldData.suffix !== undefined) generalSettings.suffix = fieldData.suffix;
+      if (fieldData.rows !== undefined) generalSettings.rows = fieldData.rows;
+      if (fieldData.minHeight !== undefined) generalSettings.minHeight = fieldData.minHeight;
+      
+      // Merge with explicitly provided general settings
+      if (fieldData.general_settings) {
+        Object.assign(generalSettings, fieldData.general_settings);
+      }
 
       // Set up field data using the new columns structure
       const field: any = {
@@ -319,14 +355,14 @@ export const CollectionService = {
         collection_id: collectionId,
         description: fieldData.description || null,
         required: fieldData.required || false,
-        sort_order: highestSortOrder, // Place the new field at the bottom
+        sort_order: highestSortOrder,
       
         // Initialize with proper settings objects
         validation_settings: fieldData.validation_settings || fieldData.settings?.validation || {},
         appearance_settings: normalizeAppearanceSettings(fieldData.appearance_settings || fieldData.settings?.appearance || {}),
         advanced_settings: fieldData.advanced_settings || fieldData.settings?.advanced || {},
-        ui_options_settings: {}, // Don't store UI options here anymore
-        general_settings: generalSettings // Store helpText and placeholder here
+        ui_options_settings: fieldData.ui_options_settings || {}, // Don't store UI options here anymore
+        general_settings: generalSettings // Comprehensive general settings
       };
       
       // Maintain backward compatibility with settings
@@ -366,7 +402,7 @@ export const CollectionService = {
         });
         throw error;
       }
-
+      
       debugLog('Field created successfully:', data);
       
       toast({
@@ -445,12 +481,12 @@ export const CollectionService = {
         debugLog('[updateField] New advanced settings:', JSON.stringify(updateData.advanced_settings, null, 2));
       }
       
-      // Handle general settings - move helpText here
+      // Handle general settings - comprehensive approach
       const newGeneralSettings: GeneralSettings = {
         ...(fieldData.general_settings || {}),
       };
 
-      // Extract helpText and placeholder from multiple locations and prioritize
+      // Extract all possible fields that should go into general_settings
       if (fieldData.helpText !== undefined || 
           fieldData.settings?.helpText !== undefined || 
           fieldData.settings?.ui_options?.help_text !== undefined) {
@@ -459,8 +495,52 @@ export const CollectionService = {
                                     fieldData.settings?.ui_options?.help_text;
       }
       
-      if (fieldData.settings?.ui_options?.placeholder !== undefined) {
-        newGeneralSettings.placeholder = fieldData.settings.ui_options.placeholder;
+      if (fieldData.placeholder !== undefined ||
+          fieldData.settings?.ui_options?.placeholder !== undefined) {
+        newGeneralSettings.placeholder = fieldData.placeholder || 
+                                      fieldData.settings?.ui_options?.placeholder;
+      }
+      
+      // Handle hidden_in_forms
+      if (fieldData.settings?.ui_options?.hidden_in_forms !== undefined) {
+        newGeneralSettings.hidden_in_forms = fieldData.settings.ui_options.hidden_in_forms;
+      }
+      
+      // Handle field type specific settings
+      if (fieldData.keyFilter !== undefined) {
+        newGeneralSettings.keyFilter = fieldData.keyFilter;
+      }
+      
+      if (fieldData.min !== undefined) {
+        newGeneralSettings.minValue = fieldData.min;
+      }
+      
+      if (fieldData.max !== undefined) {
+        newGeneralSettings.maxValue = fieldData.max;
+      }
+      
+      if (fieldData.length !== undefined) {
+        newGeneralSettings.otpLength = fieldData.length;
+      }
+      
+      if (fieldData.maxTags !== undefined) {
+        newGeneralSettings.maxTags = fieldData.maxTags;
+      }
+      
+      if (fieldData.prefix !== undefined) {
+        newGeneralSettings.prefix = fieldData.prefix;
+      }
+      
+      if (fieldData.suffix !== undefined) {
+        newGeneralSettings.suffix = fieldData.suffix;
+      }
+      
+      if (fieldData.rows !== undefined) {
+        newGeneralSettings.rows = fieldData.rows;
+      }
+      
+      if (fieldData.minHeight !== undefined) {
+        newGeneralSettings.minHeight = fieldData.minHeight;
       }
       
       // Only merge if we have new general settings to add
@@ -471,17 +551,34 @@ export const CollectionService = {
       }
       
       // Legacy settings structure - keep it for backward compatibility
-      if (fieldData.settings) {
+      if (fieldData.settings || Object.keys(newGeneralSettings).length > 0) {
         // Copy the existing settings object to avoid reference issues
         const currentSettings = currentFieldExtended?.settings ? JSON.parse(JSON.stringify(currentFieldExtended.settings)) : {};
         
-        // Deep merge settings
-        const mergedSettings = deepMerge(currentSettings, fieldData.settings);
+        // Create a settings update object
+        const settingsUpdate = {...(fieldData.settings || {})};
         
-        // Ensure helpText is also in settings for backward compatibility if provided
-        if (newGeneralSettings.helpText !== undefined) {
-          mergedSettings.helpText = newGeneralSettings.helpText;
+        // Ensure ui_options exists
+        if (!settingsUpdate.ui_options) {
+          settingsUpdate.ui_options = {};
         }
+        
+        // Add general settings fields to ui_options for backward compatibility
+        if (newGeneralSettings.placeholder !== undefined) {
+          settingsUpdate.ui_options.placeholder = newGeneralSettings.placeholder;
+        }
+        
+        if (newGeneralSettings.helpText !== undefined) {
+          settingsUpdate.ui_options.help_text = newGeneralSettings.helpText;
+          settingsUpdate.helpText = newGeneralSettings.helpText;
+        }
+        
+        if (newGeneralSettings.hidden_in_forms !== undefined) {
+          settingsUpdate.ui_options.hidden_in_forms = newGeneralSettings.hidden_in_forms;
+        }
+        
+        // Deep merge settings
+        const mergedSettings = deepMerge(currentSettings, settingsUpdate);
         
         updateData.settings = mergedSettings;
         

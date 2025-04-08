@@ -61,13 +61,13 @@ export function FieldConfigTab({
       setKeyFilter(generalSettings.keyFilter || fieldData.keyFilter || 'none');
       
       // Field type specific settings
-      setMinValue(generalSettings.minValue || fieldData.min);
-      setMaxValue(generalSettings.maxValue || fieldData.max);
-      setOtpLength(generalSettings.otpLength || fieldData.length || 6);
-      setMaxTags(generalSettings.maxTags || fieldData.maxTags || 10);
+      setMinValue(generalSettings.minValue !== undefined ? generalSettings.minValue : fieldData.min);
+      setMaxValue(generalSettings.maxValue !== undefined ? generalSettings.maxValue : fieldData.max);
+      setOtpLength(generalSettings.otpLength !== undefined ? generalSettings.otpLength : fieldData.length || 6);
+      setMaxTags(generalSettings.maxTags !== undefined ? generalSettings.maxTags : fieldData.maxTags || 10);
       setPrefix(generalSettings.prefix || fieldData.prefix || '');
       setSuffix(generalSettings.suffix || fieldData.suffix || '');
-      setRows(generalSettings.rows || fieldData.rows || 5);
+      setRows(generalSettings.rows !== undefined ? generalSettings.rows : fieldData.rows || 5);
       setMinHeight(generalSettings.minHeight || fieldData.minHeight || '200px');
     } else if (fieldType) {
       // Generate a default field name based on type

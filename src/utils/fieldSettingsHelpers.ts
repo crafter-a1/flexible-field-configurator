@@ -37,6 +37,7 @@ export interface GeneralSettings {
   rows?: number;
   minHeight?: string;
   hidden_in_forms?: boolean;
+  placeholder?: string;
   [key: string]: any;
 }
 
@@ -241,6 +242,7 @@ export const getGeneralSettings = (fieldData: any): GeneralSettings => {
   const general: GeneralSettings = {};
   if (fieldData?.description) general.description = fieldData.description;
   if (fieldData?.helpText) general.helpText = fieldData.helpText;
+  if (fieldData?.ui_options?.placeholder) general.placeholder = fieldData.ui_options.placeholder;
   
   return general;
 };

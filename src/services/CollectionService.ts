@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { normalizeAppearanceSettings, validateUIVariant } from '@/utils/inputAdapters';
 import { toast } from '@/hooks/use-toast';
-import { AdvancedSettings } from '@/utils/fieldSettingsHelpers';
+import { AdvancedSettings, GeneralSettings } from '@/utils/fieldSettingsHelpers';
 
 export interface ValidationSettings {
   required?: boolean;

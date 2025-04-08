@@ -139,6 +139,7 @@ export function FieldConfigTab({
       helpText,
       ui_options: {
         placeholder,
+        help_text: helpText,
         hidden_in_forms: hiddenInForms
       }
     };

@@ -27,13 +27,27 @@ export function GeneralSettingsMiddleware({
   // Create update method for general settings
   const updateGeneralSettings = async (settings: GeneralSettings) => {
     console.log('Updating general settings:', settings);
-    return saveToDatabase('general', settings);
+    
+    // Make sure all properties are preserved
+    const updatedSettings = {
+      ...generalSettings, // Keep all existing settings
+      ...settings, // Apply new settings
+    };
+    
+    return saveToDatabase('general', updatedSettings);
   };
   
   // Create a specialized save function for general settings
   const saveGeneralToDatabase = async (settings: GeneralSettings) => {
     console.log('Saving general settings to database:', settings);
-    return saveToDatabase('general', settings);
+    
+    // Make sure all properties are preserved
+    const updatedSettings = {
+      ...generalSettings, // Keep all existing settings
+      ...settings, // Apply new settings
+    };
+    
+    return saveToDatabase('general', updatedSettings);
   };
   
   return (

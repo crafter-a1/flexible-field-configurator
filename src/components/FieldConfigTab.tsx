@@ -27,6 +27,7 @@ export function FieldConfigTab({
   const [description, setDescription] = useState('');
   const [required, setRequired] = useState(false);
   const [placeholder, setPlaceholder] = useState('');
+  const [helpText, setHelpText] = useState('');
 
   useEffect(() => {
     if (fieldData) {
@@ -34,7 +35,15 @@ export function FieldConfigTab({
       setApiId(fieldData.apiId || '');
       setDescription(fieldData.description || '');
       setRequired(fieldData.required || false);
-      setPlaceholder(fieldData.settings?.ui_options?.placeholder || '');
+      
+      // Extract placeholder from general_settings first, then fallback
+      const generalSettings = fieldData.general_settings || {};
+      const uiOptions = fieldData.settings?.ui_options || fieldData.ui_options_settings || {};
+      
+      setPlaceholder(generalSettings.placeholder || uiOptions.placeholder || '');
+      
+      // Extract helpText from general_settings first, then fallback
+      setHelpText(generalSettings.helpText || fieldData.helpText || uiOptions.help_text || '');
     } else if (fieldType) {
       // Generate a default field name based on type
       const typeLabel = fieldType.charAt(0).toUpperCase() + fieldType.slice(1);
@@ -64,18 +73,20 @@ export function FieldConfigTab({
       description,
       required,
       placeholder,
+      helpText,
       type: fieldType
     });
     
-    // Create field data object
+    // Create field data object with general_settings
     const fieldConfigData = {
       name,
       apiId,
       description,
       required,
       type: fieldType,
-      ui_options: {
-        placeholder
+      general_settings: {
+        placeholder,
+        helpText
       }
     };
     
@@ -139,6 +150,19 @@ export function FieldConfigTab({
           />
           <p className="text-sm text-gray-500">
             Hint text displayed when field is empty
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="helpText">Help Text</Label>
+          <Input
+            id="helpText"
+            value={helpText}
+            onChange={(e) => setHelpText(e.target.value)}
+            placeholder="Enter help text"
+          />
+          <p className="text-sm text-gray-500">
+            Additional guidance shown below the field
           </p>
         </div>
         

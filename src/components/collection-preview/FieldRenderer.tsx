@@ -42,20 +42,27 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
   const fieldName = field.name || "Field";
   const value = formData?.[fieldId] !== undefined ? formData[fieldId] : "";
   
-  const placeholder = field.placeholder || field.ui_options?.placeholder || `Enter ${fieldName}...`;
-  const helpText = field.helpText || field.ui_options?.help_text;
+  const fieldSettings = field.settings || {};
+  const generalSettings = field.general_settings || {};
+  const uiOptions = fieldSettings.ui_options || field.ui_options_settings || {};
+  
+  const placeholder = generalSettings.placeholder || uiOptions.placeholder || `Enter ${fieldName}...`;
+  const helpText = generalSettings.helpText || field.helpText || uiOptions.help_text;
+  
+  console.log(`Rendering field ${fieldName} with helpText:`, helpText);
+  
   const required = field.required || false;
   const hasError = errors && errors[fieldId]?.length > 0;
   const errorMessage = errors && errors[fieldId]?.join(", ");
 
-  let appearance = field.appearance || {};
-  console.log(`Rendering field ${fieldName} with appearance:`, JSON.stringify(appearance, null, 2));
+  const appearanceSettings = field.appearance_settings || fieldSettings.appearance || {};
+  console.log(`Appearance settings for field ${fieldName}:`, JSON.stringify(appearanceSettings, null, 2));
 
-  const uiVariant = validateUIVariant(appearance.uiVariant);
+  const uiVariant = validateUIVariant(appearanceSettings.uiVariant);
   console.log(`UI Variant for field ${fieldName} in FieldRenderer:`, uiVariant);
   
-  appearance = {
-    ...appearance,
+  const appearance = {
+    ...appearanceSettings,
     uiVariant
   };
   
@@ -74,7 +81,7 @@ export const FieldRenderer = ({ field, formData, titleField, onInputChange, erro
     colors = {}
   } = appearance;
 
-  const advanced = field.advanced || {};
+  const advanced = field.advanced_settings || fieldSettings.advanced || {};
 
   const fieldClassName = cn(
     customClass,

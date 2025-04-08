@@ -33,15 +33,23 @@ export default function CollectionPreview() {
         const fetchedFields = await getFieldsForCollection(collectionId);
         console.log("[CollectionPreview] Raw fields fetched from database:", JSON.stringify(fetchedFields, null, 2));
         
+        // Check for helpText in each field
+        fetchedFields.forEach(field => {
+          const generalSettings = field.general_settings || {};
+          const helpText = generalSettings.helpText || field.helpText || field.settings?.helpText || field.ui_options?.help_text;
+          console.log(`[CollectionPreview] Field ${field.name} helpText:`, helpText);
+        });
+        
         // Process fields to ensure consistent structure with field-specific settings
         console.log("[CollectionPreview] Adapting fields for preview...");
         const adaptedFields = adaptFieldsForPreview(fetchedFields);
         
-        // Log each field's appearance settings to verify they're preserved correctly
+        // Log each field's appearance settings and helpText to verify they're preserved correctly
         adaptedFields.forEach(field => {
           console.log(`[CollectionPreview] Field ${field.name} final appearance settings:`, 
-            JSON.stringify(field.appearance, null, 2));
-          console.log(`[CollectionPreview] Field ${field.name} UI variant: ${field.appearance?.uiVariant}`);
+            JSON.stringify(field.appearance_settings, null, 2));
+          console.log(`[CollectionPreview] Field ${field.name} UI variant: ${field.appearance_settings?.uiVariant}`);
+          console.log(`[CollectionPreview] Field ${field.name} helpText: ${field.general_settings?.helpText || field.helpText}`);
         });
         
         setFields(adaptedFields);

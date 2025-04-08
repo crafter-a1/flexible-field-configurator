@@ -23,7 +23,7 @@ export function AppearanceSettingsMiddleware({
   
   // Create a specialized save function for appearance settings
   const saveAppearanceToDatabase = async (settings: AppearanceSettings) => {
-    return saveToDatabase('appearance', settings);
+    return saveToDatabase('appearance_settings', settings);
   };
   
   return (

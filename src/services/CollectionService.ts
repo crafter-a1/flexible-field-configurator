@@ -43,6 +43,12 @@ export interface AppearanceSettings {
   [key: string]: any;
 }
 
+export interface GeneralSettings {
+  placeholder?: string;
+  helpText?: string;
+  [key: string]: any;
+}
+
 export interface Collection {
   id: string;
   title: string;
@@ -87,7 +93,7 @@ export interface CollectionField {
   appearance_settings?: AppearanceSettings;
   advanced_settings?: Record<string, any>;
   ui_options_settings?: Record<string, any>;
-  general_settings?: Record<string, any>;
+  general_settings?: GeneralSettings;
   validation?: ValidationSettings;
   appearance?: AppearanceSettings;
   advanced?: Record<string, any>;
@@ -102,7 +108,7 @@ type SupabaseFieldRow = Database['public']['Tables']['fields']['Row'] & {
   appearance_settings?: AppearanceSettings;
   advanced_settings?: AdvancedSettings;
   ui_options_settings?: Record<string, any>;
-  general_settings?: Record<string, any>;
+  general_settings?: GeneralSettings;
 };
 
 const mapSupabaseCollection = (collection: Database['public']['Tables']['collections']['Row']): Collection => {
@@ -139,7 +145,15 @@ const mapSupabaseField = (field: SupabaseFieldRow): CollectionField => {
   const appearanceSettings = field.appearance_settings as AppearanceSettings || settings.appearance || {};
   const advancedSettings = field.advanced_settings as AdvancedSettings || settings.advanced || {};
   const uiOptionsSettings = field.ui_options_settings as Record<string, any> || settings.ui_options || {};
-  const generalSettings = field.general_settings as Record<string, any> || {};
+  const generalSettings = field.general_settings as GeneralSettings || {};
+
+  // Extract helpText from the right place - prefer general_settings, then fallback
+  const helpText = generalSettings.helpText || settings.helpText || uiOptionsSettings.help_text;
+  
+  // Add helpText to general settings if it exists but isn't already there
+  if (helpText && !generalSettings.helpText) {
+    generalSettings.helpText = helpText;
+  }
 
   // Log appearance settings specifically
   if (appearanceSettings) {
@@ -148,6 +162,9 @@ const mapSupabaseField = (field: SupabaseFieldRow): CollectionField => {
   
   // Ensure appearance settings are properly normalized
   const normalizedAppearance = normalizeAppearanceSettings(appearanceSettings);
+
+  // Log helpText
+  console.log(`Help text for field ${field.name}:`, helpText);
 
   return {
     id: field.id,
@@ -170,6 +187,7 @@ const mapSupabaseField = (field: SupabaseFieldRow): CollectionField => {
     appearance: normalizedAppearance,
     advanced: advancedSettings,
     ui_options: uiOptionsSettings,
+    helpText: helpText
   };
 };
 
@@ -279,6 +297,12 @@ export const CollectionService = {
 
       const { apiId, ...restData } = fieldData;
 
+      // Extract general settings from fieldData or defaults
+      const generalSettings: GeneralSettings = {
+        placeholder: fieldData.settings?.ui_options?.placeholder || "",
+        helpText: fieldData.helpText || fieldData.settings?.helpText || ""
+      };
+
       // Set up field data using the new columns structure
       const field: any = {
         name: fieldData.name || 'New Field',
@@ -289,38 +313,13 @@ export const CollectionService = {
         required: fieldData.required || false,
         sort_order: highestSortOrder, // Place the new field at the bottom
       
-        // Initialize empty objects for the new columns
-        validation_settings: {},
-        appearance_settings: {},
-        advanced_settings: {},
-        ui_options_settings: {},
-        general_settings: {},
+        // Initialize with proper settings objects
+        validation_settings: fieldData.validation_settings || fieldData.settings?.validation || {},
+        appearance_settings: normalizeAppearanceSettings(fieldData.appearance_settings || fieldData.settings?.appearance || {}),
+        advanced_settings: fieldData.advanced_settings || fieldData.settings?.advanced || {},
+        ui_options_settings: {}, // Don't store UI options here anymore
+        general_settings: generalSettings // Store helpText and placeholder here
       };
-      
-      // Process validation settings
-      if (fieldData.validation || fieldData.settings?.validation) {
-        field.validation_settings = fieldData.validation || fieldData.settings?.validation || {};
-      }
-      
-      // Process appearance settings
-      if (fieldData.appearance || fieldData.settings?.appearance) {
-        field.appearance_settings = normalizeAppearanceSettings(fieldData.appearance || fieldData.settings?.appearance || {});
-      }
-      
-      // Process advanced settings
-      if (fieldData.advanced || fieldData.settings?.advanced) {
-        field.advanced_settings = fieldData.advanced || fieldData.settings?.advanced || {};
-      }
-      
-      // Process UI options
-      if (fieldData.ui_options || fieldData.settings?.ui_options) {
-        field.ui_options_settings = fieldData.ui_options || fieldData.settings?.ui_options || {};
-      }
-      
-      // Process general settings
-      if (fieldData.general_settings) {
-        field.general_settings = fieldData.general_settings;
-      }
       
       // Maintain backward compatibility with settings
       const settings: Record<string, any> = {};
@@ -335,10 +334,6 @@ export const CollectionService = {
       
       if (field.advanced_settings && Object.keys(field.advanced_settings).length > 0) {
         settings.advanced = field.advanced_settings;
-      }
-      
-      if (field.ui_options_settings && Object.keys(field.ui_options_settings).length > 0) {
-        settings.ui_options = field.ui_options_settings;
       }
       
       // Only add settings if we have some data
@@ -415,38 +410,53 @@ export const CollectionService = {
       // New column-based approach
     
       // Handle validation settings
-      if (fieldData.validation_settings || fieldData.validation || fieldData.settings?.validation) {
-        const newValidation = fieldData.validation_settings || fieldData.validation || fieldData.settings?.validation || {};
-        updateData.validation_settings = newValidation;
-        debugLog('[updateField] New validation settings:', JSON.stringify(newValidation, null, 2));
+      if (fieldData.validation_settings || fieldData.settings?.validation) {
+        const newValidation = fieldData.validation_settings || fieldData.settings?.validation || {};
+        const currentValidation = currentField.validation_settings || {};
+        updateData.validation_settings = deepMerge(currentValidation, newValidation);
+        debugLog('[updateField] New validation settings:', JSON.stringify(updateData.validation_settings, null, 2));
       }
       
       // Handle appearance settings
-      if (fieldData.appearance_settings || fieldData.appearance || fieldData.settings?.appearance) {
-        const newAppearance = fieldData.appearance_settings || fieldData.appearance || fieldData.settings?.appearance || {};
+      if (fieldData.appearance_settings || fieldData.settings?.appearance) {
+        const newAppearance = fieldData.appearance_settings || fieldData.settings?.appearance || {};
+        const currentAppearance = currentField.appearance_settings || {};
         // Normalize appearance settings
-        updateData.appearance_settings = normalizeAppearanceSettings(newAppearance);
+        updateData.appearance_settings = normalizeAppearanceSettings(deepMerge(currentAppearance, newAppearance));
         debugLog('[updateField] New appearance settings:', JSON.stringify(updateData.appearance_settings, null, 2));
       }
       
       // Handle advanced settings
-      if (fieldData.advanced_settings || fieldData.advanced || fieldData.settings?.advanced) {
-        const newAdvanced = fieldData.advanced_settings || fieldData.advanced || fieldData.settings?.advanced || {};
-        updateData.advanced_settings = newAdvanced;
-        debugLog('[updateField] New advanced settings:', JSON.stringify(newAdvanced, null, 2));
+      if (fieldData.advanced_settings || fieldData.settings?.advanced) {
+        const newAdvanced = fieldData.advanced_settings || fieldData.settings?.advanced || {};
+        const currentAdvanced = currentField.advanced_settings || {};
+        updateData.advanced_settings = deepMerge(currentAdvanced, newAdvanced);
+        debugLog('[updateField] New advanced settings:', JSON.stringify(updateData.advanced_settings, null, 2));
       }
       
-      // Handle UI options
-      if (fieldData.ui_options_settings || fieldData.ui_options || fieldData.settings?.ui_options) {
-        const newUiOptions = fieldData.ui_options_settings || fieldData.ui_options || fieldData.settings?.ui_options || {};
-        updateData.ui_options_settings = newUiOptions;
-        debugLog('[updateField] New UI options:', JSON.stringify(newUiOptions, null, 2));
+      // Handle general settings - move helpText here
+      const newGeneralSettings: GeneralSettings = {
+        ...(fieldData.general_settings || {}),
+      };
+
+      // Extract helpText and placeholder from multiple locations and prioritize
+      if (fieldData.helpText !== undefined || 
+          fieldData.settings?.helpText !== undefined || 
+          fieldData.settings?.ui_options?.help_text !== undefined) {
+        newGeneralSettings.helpText = fieldData.helpText || 
+                                    fieldData.settings?.helpText || 
+                                    fieldData.settings?.ui_options?.help_text;
       }
       
-      // Handle general settings
-      if (fieldData.general_settings) {
-        updateData.general_settings = fieldData.general_settings;
-        debugLog('[updateField] New general settings:', JSON.stringify(fieldData.general_settings, null, 2));
+      if (fieldData.settings?.ui_options?.placeholder !== undefined) {
+        newGeneralSettings.placeholder = fieldData.settings.ui_options.placeholder;
+      }
+      
+      // Only merge if we have new general settings to add
+      if (Object.keys(newGeneralSettings).length > 0) {
+        const currentGeneralSettings = currentField.general_settings || {};
+        updateData.general_settings = deepMerge(currentGeneralSettings, newGeneralSettings);
+        debugLog('[updateField] New general settings:', JSON.stringify(updateData.general_settings, null, 2));
       }
       
       // Legacy settings structure - keep it for backward compatibility
@@ -456,10 +466,18 @@ export const CollectionService = {
         
         // Deep merge settings
         const mergedSettings = deepMerge(currentSettings, fieldData.settings);
+        
+        // Ensure helpText is also in settings for backward compatibility if provided
+        if (newGeneralSettings.helpText !== undefined) {
+          mergedSettings.helpText = newGeneralSettings.helpText;
+        }
+        
         updateData.settings = mergedSettings;
         
         debugLog('[updateField] Merged legacy settings:', JSON.stringify(mergedSettings, null, 2));
       }
+      
+      debugLog('[updateField] Final update data:', JSON.stringify(updateData, null, 2));
       
       // Update the field in the database
       const { data, error } = await supabase

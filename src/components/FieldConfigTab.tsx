@@ -53,18 +53,27 @@ export function FieldConfigTab({
       
       // Extract settings from the new general_settings structure first, then fallback
       const generalSettings: GeneralSettings = fieldData.general_settings || {};
-      const uiOptions = fieldData.settings?.ui_options || fieldData.ui_options_settings || {};
+      const uiOptions = fieldData.settings?.ui_options || fieldData.ui_options || {};
       
       // Set all general fields from general_settings or fallback locations
       setPlaceholder(generalSettings.placeholder || uiOptions.placeholder || '');
       setHelpText(generalSettings.helpText || fieldData.helpText || uiOptions.help_text || '');
-      setHiddenInForms(generalSettings.hidden_in_forms || uiOptions.hidden_in_forms || false);
+      setHiddenInForms(generalSettings.hidden_in_forms !== undefined ? generalSettings.hidden_in_forms : uiOptions.hidden_in_forms || false);
       setKeyFilter(generalSettings.keyFilter || fieldData.keyFilter || 'none');
       
       // Field type specific settings
-      setMinValue(generalSettings.minValue !== undefined ? generalSettings.minValue : fieldData.min);
-      setMaxValue(generalSettings.maxValue !== undefined ? generalSettings.maxValue : fieldData.max);
-      setOtpLength(generalSettings.otpLength !== undefined ? generalSettings.otpLength : fieldData.length || 6);
+      setMinValue(generalSettings.minValue !== undefined ? generalSettings.minValue : 
+                 generalSettings.min !== undefined ? generalSettings.min : 
+                 fieldData.min);
+      
+      setMaxValue(generalSettings.maxValue !== undefined ? generalSettings.maxValue : 
+                 generalSettings.max !== undefined ? generalSettings.max : 
+                 fieldData.max);
+      
+      setOtpLength(generalSettings.otpLength !== undefined ? generalSettings.otpLength : 
+                  generalSettings.length !== undefined ? generalSettings.length : 
+                  fieldData.length || 6);
+      
       setMaxTags(generalSettings.maxTags !== undefined ? generalSettings.maxTags : fieldData.maxTags || 10);
       setPrefix(generalSettings.prefix || fieldData.prefix || '');
       setSuffix(generalSettings.suffix || fieldData.suffix || '');
@@ -93,20 +102,34 @@ export function FieldConfigTab({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create comprehensive general_settings object with all fields from the General tab
+    // Create comprehensive general_settings object with all fields
     const generalSettings: GeneralSettings = {
       placeholder,
       helpText,
       hidden_in_forms: hiddenInForms,
-      keyFilter
+      keyFilter,
+      // Include ui_options for compatibility
+      ui_options: {
+        placeholder,
+        help_text: helpText,
+        hidden_in_forms: hiddenInForms,
+        // Include other UI options that might be needed
+        width: 100, // Default value
+        showCharCount: false, // Default value
+      }
     };
     
     // Add field type specific settings to general_settings
     if (fieldType === 'number') {
       generalSettings.minValue = minValue;
       generalSettings.maxValue = maxValue;
+      // For backward compatibility
+      generalSettings.min = minValue;
+      generalSettings.max = maxValue;
     } else if (fieldType === 'otp') {
       generalSettings.otpLength = otpLength;
+      // For backward compatibility
+      generalSettings.length = otpLength;
     } else if (fieldType === 'tags') {
       generalSettings.maxTags = maxTags;
     } else if (fieldType === 'slug') {
@@ -118,14 +141,7 @@ export function FieldConfigTab({
       generalSettings.minHeight = minHeight;
     }
     
-    console.log('Saving field with data:', {
-      name,
-      apiId,
-      description,
-      required,
-      general_settings: generalSettings,
-      type: fieldType
-    });
+    console.log('Saving field with general settings:', generalSettings);
     
     // Create field data object with general_settings
     const fieldConfigData = {

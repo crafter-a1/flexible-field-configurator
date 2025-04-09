@@ -67,24 +67,47 @@ export interface UIOptions {
   placeholder?: string;
   help_text?: string;
   hidden_in_forms?: boolean;
+  width?: number;
+  showCharCount?: boolean;
+  display_mode?: string;
   [key: string]: any;
 }
 
-// Add GeneralSettings interface
+// Complete GeneralSettings interface with all possible field-type specific properties
 export interface GeneralSettings {
+  // Basic settings
+  name?: string;
+  description?: string;
   placeholder?: string;
   helpText?: string;
   hidden_in_forms?: boolean;
   keyFilter?: string;
-  // Add all the missing properties with proper types
-  minValue?: number;
-  maxValue?: number;
-  otpLength?: number;
-  maxTags?: number;
-  prefix?: string;
-  suffix?: string;
-  rows?: number;
-  minHeight?: string;
+  defaultValue?: any;
+  
+  // UI options (copied for compatibility)
+  ui_options?: {
+    placeholder?: string;
+    help_text?: string;
+    hidden_in_forms?: boolean;
+    width?: number;
+    showCharCount?: boolean;
+    display_mode?: string;
+  };
+  
+  // Field-type specific settings
+  minValue?: number; // For number fields
+  maxValue?: number; // For number fields
+  min?: number;      // Alias for minValue
+  max?: number;      // Alias for maxValue
+  otpLength?: number; // For OTP fields
+  length?: number;    // Alias for otpLength
+  maxTags?: number;   // For tags input
+  prefix?: string;    // For slug fields
+  suffix?: string;    // For slug fields
+  rows?: number;      // For textarea fields
+  minHeight?: string; // For editor fields
+  
+  // Allow for additional fields
   [key: string]: any;
 }
 
@@ -115,24 +138,37 @@ export function getGeneralSettings(fieldData: any): GeneralSettings {
   // Fallback to older structures
   const generalSettings: GeneralSettings = {};
   
+  // Extract basic field properties from top level
+  if (fieldData?.name) generalSettings.name = fieldData.name;
+  if (fieldData?.description) generalSettings.description = fieldData.description;
+  if (fieldData?.helpText !== undefined) generalSettings.helpText = fieldData.helpText;
+  if (fieldData?.defaultValue !== undefined) generalSettings.defaultValue = fieldData.defaultValue;
+  if (fieldData?.keyFilter) generalSettings.keyFilter = fieldData.keyFilter;
+  
   // Extract from ui_options
-  const uiOptions = fieldData?.settings?.ui_options || fieldData?.ui_options_settings || {};
+  const uiOptions = fieldData?.settings?.ui_options || fieldData?.ui_options || {};
   if (uiOptions) {
     if (uiOptions.placeholder !== undefined) generalSettings.placeholder = uiOptions.placeholder;
     if (uiOptions.help_text !== undefined) generalSettings.helpText = uiOptions.help_text;
     if (uiOptions.hidden_in_forms !== undefined) generalSettings.hidden_in_forms = uiOptions.hidden_in_forms;
-  }
-  
-  // Extract helpText from root level
-  if (fieldData?.helpText !== undefined) {
-    generalSettings.helpText = fieldData.helpText;
+    if (uiOptions.width !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, width: uiOptions.width };
+    if (uiOptions.showCharCount !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, showCharCount: uiOptions.showCharCount };
+    if (uiOptions.display_mode !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, display_mode: uiOptions.display_mode };
   }
   
   // Extract field type specific settings
-  if (fieldData?.keyFilter) generalSettings.keyFilter = fieldData.keyFilter;
-  if (fieldData?.min !== undefined) generalSettings.minValue = fieldData.min;
-  if (fieldData?.max !== undefined) generalSettings.maxValue = fieldData.max;
-  if (fieldData?.length !== undefined) generalSettings.otpLength = fieldData.length;
+  if (fieldData?.min !== undefined) {
+    generalSettings.minValue = fieldData.min;
+    generalSettings.min = fieldData.min;
+  }
+  if (fieldData?.max !== undefined) {
+    generalSettings.maxValue = fieldData.max;
+    generalSettings.max = fieldData.max;
+  }
+  if (fieldData?.length !== undefined) {
+    generalSettings.otpLength = fieldData.length;
+    generalSettings.length = fieldData.length;
+  }
   if (fieldData?.maxTags !== undefined) generalSettings.maxTags = fieldData.maxTags;
   if (fieldData?.prefix !== undefined) generalSettings.prefix = fieldData.prefix;
   if (fieldData?.suffix !== undefined) generalSettings.suffix = fieldData.suffix;

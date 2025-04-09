@@ -32,6 +32,14 @@ export function GeneralSettingsMiddleware({
     const updatedSettings = {
       ...generalSettings, // Keep all existing settings
       ...settings, // Apply new settings
+      // Ensure UI options are also updated for compatibility
+      ui_options: {
+        ...(generalSettings.ui_options || {}),
+        ...(settings.ui_options || {}),
+        placeholder: settings.placeholder !== undefined ? settings.placeholder : generalSettings.placeholder,
+        help_text: settings.helpText !== undefined ? settings.helpText : generalSettings.helpText,
+        hidden_in_forms: settings.hidden_in_forms !== undefined ? settings.hidden_in_forms : generalSettings.hidden_in_forms,
+      }
     };
     
     return saveToDatabase('general', updatedSettings);
@@ -45,6 +53,14 @@ export function GeneralSettingsMiddleware({
     const updatedSettings = {
       ...generalSettings, // Keep all existing settings
       ...settings, // Apply new settings
+      // Ensure UI options are also updated for compatibility
+      ui_options: {
+        ...(generalSettings.ui_options || {}),
+        ...(settings.ui_options || {}),
+        placeholder: settings.placeholder !== undefined ? settings.placeholder : generalSettings.placeholder,
+        help_text: settings.helpText !== undefined ? settings.helpText : generalSettings.helpText,
+        hidden_in_forms: settings.hidden_in_forms !== undefined ? settings.hidden_in_forms : generalSettings.hidden_in_forms,
+      }
     };
     
     return saveToDatabase('general', updatedSettings);

@@ -237,6 +237,18 @@ export function updateFieldSettings(fieldData: any, section: keyof FieldSettings
       break;
     case 'general':
       updated.general_settings = settings;
+      // Also update related fields for backward compatibility
+      if (settings.helpText !== undefined) updated.helpText = settings.helpText;
+      if (settings.placeholder !== undefined) updated.placeholder = settings.placeholder;
+      if (settings.keyFilter !== undefined) updated.keyFilter = settings.keyFilter;
+      if (settings.min !== undefined) updated.min = settings.min;
+      if (settings.max !== undefined) updated.max = settings.max;
+      if (settings.length !== undefined) updated.length = settings.length;
+      if (settings.maxTags !== undefined) updated.maxTags = settings.maxTags;
+      if (settings.prefix !== undefined) updated.prefix = settings.prefix;
+      if (settings.suffix !== undefined) updated.suffix = settings.suffix;
+      if (settings.rows !== undefined) updated.rows = settings.rows;
+      if (settings.minHeight !== undefined) updated.minHeight = settings.minHeight;
       break;
     default:
       updated[`${section}_settings`] = settings;

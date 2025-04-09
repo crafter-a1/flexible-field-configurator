@@ -113,7 +113,6 @@ export function FieldConfigTab({
         placeholder,
         help_text: helpText,
         hidden_in_forms: hiddenInForms,
-        // Include other UI options that might be needed
         width: 100, // Default value
         showCharCount: false, // Default value
       }
@@ -141,7 +140,7 @@ export function FieldConfigTab({
       generalSettings.minHeight = minHeight;
     }
     
-    console.log('Saving field with general settings:', generalSettings);
+    console.log('Saving field with general settings:', JSON.stringify(generalSettings, null, 2));
     
     // Create field data object with general_settings
     const fieldConfigData = {
@@ -153,12 +152,31 @@ export function FieldConfigTab({
       general_settings: generalSettings,
       // For backwards compatibility
       helpText,
+      placeholder,
+      keyFilter,
       ui_options: {
         placeholder,
         help_text: helpText,
         hidden_in_forms: hiddenInForms
       }
     };
+    
+    // Add field-specific properties to the top level for backward compatibility
+    if (fieldType === 'number') {
+      fieldConfigData.min = minValue;
+      fieldConfigData.max = maxValue;
+    } else if (fieldType === 'otp') {
+      fieldConfigData.length = otpLength;
+    } else if (fieldType === 'tags') {
+      fieldConfigData.maxTags = maxTags;
+    } else if (fieldType === 'slug') {
+      fieldConfigData.prefix = prefix;
+      fieldConfigData.suffix = suffix;
+    } else if (fieldType === 'textarea' || fieldType === 'markdown') {
+      fieldConfigData.rows = rows;
+    } else if (fieldType === 'blockeditor' || fieldType === 'wysiwyg') {
+      fieldConfigData.minHeight = minHeight;
+    }
     
     onSave(fieldConfigData);
   };
@@ -413,8 +431,8 @@ export function FieldConfigTab({
           Cancel
         </Button>
         <Button 
-          type="submit"
-          disabled={!name || !apiId || isSaving}
+          type="submit" 
+          disabled={isSaving}
         >
           {isSaving ? (
             <>

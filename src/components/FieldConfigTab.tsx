@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +16,25 @@ interface FieldConfigTabProps {
   isSaving?: boolean;
 }
 
+interface FieldConfigData {
+  name: string;
+  apiId: string;
+  description: string;
+  required: boolean;
+  type: string | null;
+  general_settings: GeneralSettings;
+  helpText: string;
+  placeholder: string;
+  keyFilter: string;
+  ui_options: {
+    placeholder: string;
+    help_text: string;
+    hidden_in_forms: boolean;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 export function FieldConfigTab({
   fieldType,
   fieldData,
@@ -33,7 +51,6 @@ export function FieldConfigTab({
   const [hiddenInForms, setHiddenInForms] = useState(false);
   const [keyFilter, setKeyFilter] = useState('none');
   
-  // Additional field type specific states
   const [minValue, setMinValue] = useState<number | undefined>(undefined);
   const [maxValue, setMaxValue] = useState<number | undefined>(undefined);
   const [otpLength, setOtpLength] = useState<number | undefined>(6);
@@ -45,23 +62,19 @@ export function FieldConfigTab({
 
   useEffect(() => {
     if (fieldData) {
-      // Basic field properties
       setName(fieldData.name || '');
       setApiId(fieldData.apiId || '');
       setDescription(fieldData.description || '');
       setRequired(fieldData.required || false);
       
-      // Extract settings from the new general_settings structure first, then fallback
       const generalSettings: GeneralSettings = fieldData.general_settings || {};
       const uiOptions = fieldData.settings?.ui_options || fieldData.ui_options || {};
       
-      // Set all general fields from general_settings or fallback locations
       setPlaceholder(generalSettings.placeholder || uiOptions.placeholder || '');
       setHelpText(generalSettings.helpText || fieldData.helpText || uiOptions.help_text || '');
       setHiddenInForms(generalSettings.hidden_in_forms !== undefined ? generalSettings.hidden_in_forms : uiOptions.hidden_in_forms || false);
       setKeyFilter(generalSettings.keyFilter || fieldData.keyFilter || 'none');
       
-      // Field type specific settings
       setMinValue(generalSettings.minValue !== undefined ? generalSettings.minValue : 
                  generalSettings.min !== undefined ? generalSettings.min : 
                  fieldData.min);
@@ -80,7 +93,6 @@ export function FieldConfigTab({
       setRows(generalSettings.rows !== undefined ? generalSettings.rows : fieldData.rows || 5);
       setMinHeight(generalSettings.minHeight || fieldData.minHeight || '200px');
     } else if (fieldType) {
-      // Generate a default field name based on type
       const typeLabel = fieldType.charAt(0).toUpperCase() + fieldType.slice(1);
       setName(`New ${typeLabel} Field`);
       setApiId(`new_${fieldType}_field`);
@@ -88,7 +100,6 @@ export function FieldConfigTab({
     }
   }, [fieldData, fieldType]);
 
-  // Auto-generate API ID based on name
   useEffect(() => {
     if (!fieldData && name) {
       const generatedApiId = name
@@ -102,32 +113,27 @@ export function FieldConfigTab({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create comprehensive general_settings object with all fields
     const generalSettings: GeneralSettings = {
       placeholder,
       helpText,
       hidden_in_forms: hiddenInForms,
       keyFilter,
-      // Include ui_options for compatibility
       ui_options: {
         placeholder,
         help_text: helpText,
         hidden_in_forms: hiddenInForms,
-        width: 100, // Default value
-        showCharCount: false, // Default value
+        width: 100,
+        showCharCount: false
       }
     };
     
-    // Add field type specific settings to general_settings
     if (fieldType === 'number') {
       generalSettings.minValue = minValue;
       generalSettings.maxValue = maxValue;
-      // For backward compatibility
       generalSettings.min = minValue;
       generalSettings.max = maxValue;
     } else if (fieldType === 'otp') {
       generalSettings.otpLength = otpLength;
-      // For backward compatibility
       generalSettings.length = otpLength;
     } else if (fieldType === 'tags') {
       generalSettings.maxTags = maxTags;
@@ -142,15 +148,13 @@ export function FieldConfigTab({
     
     console.log('Saving field with general settings:', JSON.stringify(generalSettings, null, 2));
     
-    // Create field data object with general_settings
-    const fieldConfigData = {
+    const fieldConfigData: FieldConfigData = {
       name,
       apiId,
       description,
       required,
       type: fieldType,
       general_settings: generalSettings,
-      // For backwards compatibility
       helpText,
       placeholder,
       keyFilter,
@@ -161,7 +165,6 @@ export function FieldConfigTab({
       }
     };
     
-    // Add field-specific properties to the top level for backward compatibility
     if (fieldType === 'number') {
       fieldConfigData.min = minValue;
       fieldConfigData.max = maxValue;
@@ -181,7 +184,6 @@ export function FieldConfigTab({
     onSave(fieldConfigData);
   };
 
-  // Render field type specific inputs based on field type
   const renderFieldTypeSpecificInputs = () => {
     switch (fieldType) {
       case 'text':

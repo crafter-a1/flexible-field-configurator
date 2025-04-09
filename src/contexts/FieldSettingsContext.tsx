@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { 
   getValidationSettings, 
@@ -85,12 +86,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Updating validation settings:', settings);
       
       // Update the field data with the new validation settings
-      const updatedFieldData = {
-        ...fieldData,
-        validation_settings: settings,
-        // For backward compatibility
-        validation: settings
-      };
+      const updatedFieldData = updateFieldSettings(fieldData, 'validation', settings);
       
       setFieldData(updatedFieldData);
       
@@ -116,12 +112,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Updating appearance settings:', settings);
       
       // Update the field data with the new appearance settings
-      const updatedFieldData = {
-        ...fieldData,
-        appearance_settings: settings,
-        // For backward compatibility
-        appearance: settings
-      };
+      const updatedFieldData = updateFieldSettings(fieldData, 'appearance', settings);
       
       setFieldData(updatedFieldData);
       
@@ -147,12 +138,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Updating advanced settings:', settings);
       
       // Update the field data with the new advanced settings
-      const updatedFieldData = {
-        ...fieldData,
-        advanced_settings: settings,
-        // For backward compatibility
-        advanced: settings
-      };
+      const updatedFieldData = updateFieldSettings(fieldData, 'advanced', settings);
       
       setFieldData(updatedFieldData);
       
@@ -178,12 +164,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Updating UI options:', options);
       
       // Update the field data with the new UI options
-      const updatedFieldData = {
-        ...fieldData,
-        ui_options_settings: options,
-        // For backward compatibility
-        ui_options: options
-      };
+      const updatedFieldData = updateFieldSettings(fieldData, 'ui_options', options);
       
       setFieldData(updatedFieldData);
       
@@ -209,10 +190,7 @@ export const FieldSettingsProvider: React.FC<{
       console.log('[FieldSettingsContext] Updating general settings:', settings);
       
       // Update the field data with the new general settings
-      const updatedFieldData = {
-        ...fieldData,
-        general_settings: settings,
-      };
+      const updatedFieldData = updateFieldSettings(fieldData, 'general', settings);
       
       setFieldData(updatedFieldData);
       
@@ -257,6 +235,8 @@ export const FieldSettingsProvider: React.FC<{
       // Create the field data object using our helper for the new columns
       const fieldUpdateData = createUpdatePayload(section, settings);
       
+      console.log('[FieldSettingsContext] Update payload:', fieldUpdateData);
+      
       // Call the service to update the field in the database
       const updatedField = await updateField(collectionId!, fieldId!, fieldUpdateData);
       
@@ -283,16 +263,11 @@ export const FieldSettingsProvider: React.FC<{
             updatedSettings = updatedField.general_settings || settings;
             break;
           default:
-            updatedSettings = updatedField.settings?.[section] || settings;
+            updatedSettings = updatedField[`${section}_settings`] || updatedField[section] || settings;
         }
         
         // Update the field data with the new settings
-        const updatedFieldData = {
-          ...fieldData,
-          [`${section}_settings`]: updatedSettings,
-          // For backward compatibility
-          [section]: updatedSettings
-        };
+        const updatedFieldData = updateFieldSettings(fieldData, section, updatedSettings);
         
         setFieldData(updatedFieldData);
         

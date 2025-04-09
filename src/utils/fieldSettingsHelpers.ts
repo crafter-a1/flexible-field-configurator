@@ -1,4 +1,3 @@
-
 // Add general settings to the FieldSettings interface
 export interface FieldSettings {
   validation: ValidationSettings;
@@ -144,6 +143,8 @@ export function getGeneralSettings(fieldData: any): GeneralSettings {
   if (fieldData?.helpText !== undefined) generalSettings.helpText = fieldData.helpText;
   if (fieldData?.defaultValue !== undefined) generalSettings.defaultValue = fieldData.defaultValue;
   if (fieldData?.keyFilter) generalSettings.keyFilter = fieldData.keyFilter;
+  if (fieldData?.placeholder !== undefined) generalSettings.placeholder = fieldData.placeholder;
+  if (fieldData?.required !== undefined) generalSettings.required = fieldData.required;
   
   // Extract from ui_options
   const uiOptions = fieldData?.settings?.ui_options || fieldData?.ui_options || {};
@@ -151,9 +152,25 @@ export function getGeneralSettings(fieldData: any): GeneralSettings {
     if (uiOptions.placeholder !== undefined) generalSettings.placeholder = uiOptions.placeholder;
     if (uiOptions.help_text !== undefined) generalSettings.helpText = uiOptions.help_text;
     if (uiOptions.hidden_in_forms !== undefined) generalSettings.hidden_in_forms = uiOptions.hidden_in_forms;
-    if (uiOptions.width !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, width: uiOptions.width };
-    if (uiOptions.showCharCount !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, showCharCount: uiOptions.showCharCount };
-    if (uiOptions.display_mode !== undefined) generalSettings.ui_options = { ...generalSettings.ui_options, display_mode: uiOptions.display_mode };
+    
+    generalSettings.ui_options = {
+      ...(generalSettings.ui_options || {}),
+      placeholder: uiOptions.placeholder,
+      help_text: uiOptions.help_text,
+      hidden_in_forms: uiOptions.hidden_in_forms,
+    };
+    
+    if (uiOptions.width !== undefined) {
+      generalSettings.ui_options.width = uiOptions.width;
+    }
+    
+    if (uiOptions.showCharCount !== undefined) {
+      generalSettings.ui_options.showCharCount = uiOptions.showCharCount;
+    }
+    
+    if (uiOptions.display_mode !== undefined) {
+      generalSettings.ui_options.display_mode = uiOptions.display_mode;
+    }
   }
   
   // Extract field type specific settings
@@ -180,6 +197,8 @@ export function getGeneralSettings(fieldData: any): GeneralSettings {
 
 // Update the createColumnUpdatePayload function to handle general settings
 export function createColumnUpdatePayload(section: keyof FieldSettings, settings: any): any {
+  console.log(`Creating column update payload for ${section}:`, settings);
+  
   switch (section) {
     case 'validation':
       return { validation_settings: settings };
@@ -207,40 +226,69 @@ export function getNormalizedFieldSettings(fieldData: any): FieldSettings {
   };
 }
 
-// Dummy functions to satisfy imports in other files
-export function prepareFieldForPreview(field: any): any {
-  return field;
+// Helper function to perform deep merge of objects
+function deepMerge(target: any, source: any): any {
+  const output = { ...target };
+  
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] });
+        } else {
+          output[key] = deepMerge(target[key], source[key]);
+        }
+      } else {
+        Object.assign(output, { [key]: source[key] });
+      }
+    });
+  }
+  
+  return output;
 }
 
-export function standardizeFieldForDatabase(field: any): any {
-  return field;
+// Helper to check if value is an object
+function isObject(item: any): boolean {
+  return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
+// Update fieldSettings with deep merge functionality
 export function updateFieldSettings(fieldData: any, section: keyof FieldSettings, settings: any): any {
+  console.log(`Updating field settings for ${section}:`, settings);
   const updated = { ...fieldData };
+  
   switch (section) {
     case 'validation':
-      updated.validation_settings = settings;
-      updated.validation = settings; // For backward compatibility
+      // Use deep merge to only update changed properties
+      const existingValidation = getValidationSettings(fieldData);
+      const mergedValidation = deepMerge(existingValidation, settings);
+      
+      updated.validation_settings = mergedValidation;
+      updated.validation = mergedValidation; // For backward compatibility
       break;
+      
     case 'appearance':
       updated.appearance_settings = settings;
       updated.appearance = settings; // For backward compatibility
       break;
+      
     case 'advanced':
       updated.advanced_settings = settings;
       updated.advanced = settings; // For backward compatibility
       break;
+      
     case 'ui_options':
       updated.ui_options_settings = settings;
       updated.ui_options = settings; // For backward compatibility
       break;
+      
     case 'general':
       updated.general_settings = settings;
       // Also update related fields for backward compatibility
       if (settings.helpText !== undefined) updated.helpText = settings.helpText;
       if (settings.placeholder !== undefined) updated.placeholder = settings.placeholder;
       if (settings.keyFilter !== undefined) updated.keyFilter = settings.keyFilter;
+      if (settings.required !== undefined) updated.required = settings.required;
       if (settings.min !== undefined) updated.min = settings.min;
       if (settings.max !== undefined) updated.max = settings.max;
       if (settings.length !== undefined) updated.length = settings.length;
@@ -250,13 +298,24 @@ export function updateFieldSettings(fieldData: any, section: keyof FieldSettings
       if (settings.rows !== undefined) updated.rows = settings.rows;
       if (settings.minHeight !== undefined) updated.minHeight = settings.minHeight;
       break;
+      
     default:
       updated[`${section}_settings`] = settings;
   }
+  
   return updated;
 }
 
 // Backward compatibility wrapper for createColumnUpdatePayload
 export function createUpdatePayload(section: keyof FieldSettings, settings: any): any {
   return createColumnUpdatePayload(section, settings);
+}
+
+// Dummy functions to satisfy imports in other files
+export function prepareFieldForPreview(field: any): any {
+  return field;
+}
+
+export function standardizeFieldForDatabase(field: any): any {
+  return field;
 }

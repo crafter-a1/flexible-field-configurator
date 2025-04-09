@@ -13,18 +13,25 @@ import {
   FormControl,
   FormDescription
 } from "@/components/ui/form";
-import { Check, X, AlertCircle } from 'lucide-react';
+import { Check, X, AlertCircle, Save } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export interface FieldValidationPanelProps {
   fieldType: string | null;
   initialData?: any;
   onUpdate: (data: any) => void;
+  onSave?: (data: any) => void;
+  isSaving?: boolean;
 }
 
-export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: FieldValidationPanelProps) {
+export function FieldValidationPanel({ 
+  fieldType, 
+  initialData = {}, 
+  onUpdate, 
+  onSave,
+  isSaving = false
+}: FieldValidationPanelProps) {
   const [activeTab, setActiveTab] = useState('rules');
-  const [required, setRequired] = useState(initialData?.required || false);
   const [minLengthEnabled, setMinLengthEnabled] = useState(initialData?.minLengthEnabled || false);
   const [maxLengthEnabled, setMaxLengthEnabled] = useState(initialData?.maxLengthEnabled || false);
   const [patternEnabled, setPatternEnabled] = useState(initialData?.patternEnabled || false);
@@ -50,7 +57,6 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
 
   useEffect(() => {
     if (initialData) {
-      setRequired(initialData.required || false);
       setMinLengthEnabled(initialData.minLengthEnabled || false);
       setMaxLengthEnabled(initialData.maxLengthEnabled || false);
       setPatternEnabled(initialData.patternEnabled || false);
@@ -71,7 +77,6 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
 
   const handleUpdateValidation = () => {
     const validationData = {
-      required,
       minLengthEnabled,
       maxLengthEnabled,
       patternEnabled,
@@ -96,20 +101,36 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
   };
 
   const saveValidationSettings = () => {
-    handleUpdateValidation();
-    // Log for debugging
-    console.log('Explicitly saving validation settings');
+    if (onSave) {
+      const validationData = {
+        minLengthEnabled,
+        maxLengthEnabled,
+        patternEnabled,
+        customValidationEnabled,
+        minLength: parseInt(minLength as any),
+        maxLength: parseInt(maxLength as any),
+        pattern,
+        customMessage,
+        customValidation,
+        ariaRequired,
+        ariaDescribedBy,
+        ariaLabel,
+        ariaLabelledBy,
+        ariaInvalid,
+        autocomplete
+      };
+      
+      // Log for debugging
+      console.log('Explicitly saving validation settings:', validationData);
+      onSave(validationData);
+    } else {
+      handleUpdateValidation();
+    }
   };
 
   const testValidation = () => {
     const errors: string[] = [];
     let isValid = true;
-
-    // Test required
-    if (required && !testValue.trim()) {
-      errors.push("This field is required");
-      isValid = false;
-    }
 
     // Test min length
     if (minLengthEnabled && testValue.length < minLength) {
@@ -186,7 +207,20 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-medium">Field Validation Rules</h2>
-        <Button onClick={saveValidationSettings}>Save Validation Settings</Button>
+        <Button 
+          onClick={saveValidationSettings} 
+          disabled={isSaving}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          {isSaving ? (
+            <>Saving...</>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Save Validation Settings
+            </>
+          )}
+        </Button>
       </div>
       <p className="text-gray-500">
         Configure validation rules for your field
@@ -202,23 +236,6 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
         <TabsContent value="rules" className="space-y-4">
           <Card className="border rounded-md">
             <CardContent className="p-0">
-              <div className="flex flex-row items-center justify-between space-x-2 p-4 border-b">
-                <div>
-                  <h3 className="text-base font-medium">Required Field</h3>
-                  <p className="text-sm text-gray-500">
-                    Make this field mandatory for content creation
-                  </p>
-                </div>
-                <Switch
-                  checked={required}
-                  onCheckedChange={(value) => {
-                    setRequired(value);
-                    // Update immediately when toggling required
-                    setTimeout(() => handleUpdateValidation(), 0);
-                  }}
-                />
-              </div>
-
               {fieldType && (
                 <>
                   <div className="flex flex-row items-center justify-between space-x-2 p-4 border-b">
@@ -361,9 +378,6 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Current Validation Rules:</h4>
                   <ul className="text-sm text-gray-500 list-disc pl-5 space-y-1">
-                    {required && (
-                      <li>Required field</li>
-                    )}
                     {minLengthEnabled && (
                       <li>Minimum length: {minLength} characters</li>
                     )}
@@ -376,7 +390,7 @@ export function FieldValidationPanel({ fieldType, initialData = {}, onUpdate }: 
                     {customValidationEnabled && customValidation && (
                       <li>Custom validation: (custom function)</li>
                     )}
-                    {!required && !minLengthEnabled && !maxLengthEnabled && !patternEnabled && !customValidationEnabled && (
+                    {!minLengthEnabled && !maxLengthEnabled && !patternEnabled && !customValidationEnabled && (
                       <li>No validation rules configured</li>
                     )}
                   </ul>

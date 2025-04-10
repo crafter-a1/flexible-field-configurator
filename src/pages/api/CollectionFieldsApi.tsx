@@ -2,7 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import CollectionApiService from '@/services/CollectionApiService';
+import { ApiDocumentation } from '@/components/api/ApiDocumentation';
 
+/**
+ * Component for displaying collection fields API data and documentation
+ */
 export default function CollectionFieldsApi() {
   const { collectionId } = useParams<{ collectionId: string }>();
   const [searchParams] = useSearchParams();
@@ -53,10 +57,63 @@ export default function CollectionFieldsApi() {
     }
   }, [data, error, callback]);
 
-  // Render JSON response
+  // If we're rendering as JSONP, don't show the documentation
+  if (callback) {
+    return (
+      <pre style={{ display: 'none' }}>
+        {JSON.stringify(data || { success: false, error }, null, 2)}
+      </pre>
+    );
+  }
+
+  // Show documentation and response
   return (
-    <pre style={{ display: callback ? 'none' : 'block' }}>
-      {JSON.stringify(data || { success: false, error }, null, 2)}
-    </pre>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">Collection Fields API</h1>
+      
+      <ApiDocumentation
+        endpoint={`/api/collections/${collectionId || ':collectionId'}/fields`}
+        method="GET"
+        description="Returns all fields for a specific collection with their settings."
+        parameters={[
+          {
+            name: "appearance",
+            description: "Include appearance settings in the response",
+            required: false,
+            default: "true"
+          },
+          {
+            name: "validation",
+            description: "Include validation settings in the response",
+            required: false,
+            default: "true"
+          },
+          {
+            name: "callback",
+            description: "JSONP callback function name for cross-domain requests",
+            required: false
+          }
+        ]}
+        responseExample={data || {
+          success: true, 
+          fields: [
+            { 
+              id: "field1",
+              name: "Title", 
+              type: "text",
+              validation_settings: { required: true, minLength: 3 },
+              appearance_settings: { uiVariant: "filled" } 
+            }
+          ]
+        }}
+      />
+      
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Response</h2>
+        <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
+          {JSON.stringify(data || { success: false, error }, null, 2)}
+        </pre>
+      </div>
+    </div>
   );
 }

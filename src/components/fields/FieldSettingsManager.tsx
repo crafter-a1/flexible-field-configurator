@@ -9,7 +9,6 @@ import { FieldAppearancePanel } from './appearance/FieldAppearancePanel';
 import { FieldAdvancedPanel } from './FieldAdvancedPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 
 interface FieldSettingsManagerProps {
@@ -62,25 +61,6 @@ export function FieldSettingsManager({
                   onSave={saveToDatabase}
                   isSaving={isSaving}
                 />
-                
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    onClick={() => saveToDatabase(settings)}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Validation Settings
-                      </>
-                    )}
-                  </Button>
-                </div>
               </div>
             )}
           </ValidationSettingsMiddleware>

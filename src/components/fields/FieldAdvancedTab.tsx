@@ -1,13 +1,9 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { FieldAdvancedPanel } from "./FieldAdvancedPanel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  FieldSettingsMiddleware 
-} from "./middleware/FieldSettingsMiddleware";
-import { 
-  AdvancedSettingsMiddleware 
-} from "./middleware/AdvancedSettingsMiddleware";
+import { FieldSettingsMiddleware } from "./middleware/FieldSettingsMiddleware";
+import { AdvancedSettingsMiddleware } from "./middleware/AdvancedSettingsMiddleware";
 
 interface FieldAdvancedTabProps {
   fieldType: string | null;
@@ -24,11 +20,7 @@ export function FieldAdvancedTab({
   fieldData, 
   onUpdate 
 }: FieldAdvancedTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    console.log("[FieldAdvancedTab] Field data received:", fieldData);
-  }, [fieldData]);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   if (isLoading) {
     return (

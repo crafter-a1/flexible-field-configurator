@@ -59,6 +59,7 @@ export function FieldSettingsManager({
                   fieldType={fieldType}
                   initialData={settings}
                   onUpdate={updateSettings}
+                  onSave={saveToDatabase}
                   isSaving={isSaving}
                 />
                 

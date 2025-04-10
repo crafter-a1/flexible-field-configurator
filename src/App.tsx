@@ -39,6 +39,8 @@ function App() {
           <Route path="/components/:componentId" element={<ComponentDetails />} />
           <Route path="/content" element={<Content />} />
           <Route path="/api" element={<Api />} />
+          <Route path="/api/collections/:collectionId/fields" element={<CollectionFieldsApi />} />
+          <Route path="/api/collections/:collectionId" element={<CollectionApi />} />
           <Route path="/users" element={<Users />} />
           {/* Debug routes */}
           <Route path="/debug/fields/:collectionId" element={<FieldDebug />} />

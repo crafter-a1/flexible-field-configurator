@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 import { CollectionPreviewForm } from '@/components/collection-preview/CollectionPreviewForm';
 import { toast } from '@/hooks/use-toast';
 import { adaptFieldsForPreview } from '@/utils/fieldAdapters';
@@ -96,16 +96,29 @@ export default function CollectionPreview() {
   return (
     <MainLayout>
       <div className="p-6 md:p-10">
-        <div className="flex items-center mb-6">
-          <Button 
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Button 
+              variant="outline"
+              onClick={handleBackClick}
+              className="mr-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Fields
+            </Button>
+            <h1 className="text-2xl font-bold">Collection Preview</h1>
+          </div>
+          
+          {/* Add API Link button */}
+          <Button
             variant="outline"
-            onClick={handleBackClick}
-            className="mr-4"
+            asChild
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Fields
+            <Link to={`/api/collections/${collectionId}`}>
+              <ExternalLink className="mr-2 h-4 w-4" />
+              API Access
+            </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Collection Preview</h1>
         </div>
 
         {isLoading ? (
